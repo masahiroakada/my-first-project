@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>おとかちゃんのアプリ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Rounded Mplus 1c", sans-serif;
+      overflow: hidden;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: #fef3e2;
+    }
+
+    /* --- 共通 --- */
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 20px;
+    }
+    .screen.active { display: flex; }
+
+    /* --- ホーム画面 --- */
+    #home {
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    }
+
+    .home-title {
+      font-size: 1.8rem;
+      color: #e44d7b;
+      margin-bottom: 8px;
+    }
+
+    .home-name {
+      font-size: 3rem;
+      color: #ff6b9d;
+      margin-bottom: 30px;
+      animation: bounce 1.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      max-width: 340px;
+      width: 100%;
+    }
+
+    .menu-btn {
+      background: #fff;
+      border: none;
+      border-radius: 24px;
+      padding: 24px 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      transition: transform 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-btn:active { transform: scale(0.92); }
+    .menu-btn .icon { font-size: 3rem; }
+    .menu-btn .label { color: #555; font-weight: 600; }
+
+    /* --- 戻るボタン --- */
+    .back-btn {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 100;
+      background: rgba(255,255,255,0.85);
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      display: none;
+    }
+    .back-btn.show { display: block; }
+
+    /* --- どうぶつゲーム --- */
+    #animals {
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+    }
+
+    .animals-title {
+      font-size: 1.5rem;
+      color: #4a6fa1;
+      margin-bottom: 20px;
+    }
+
+    .animal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .animal-btn {
+      background: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 16px 8px;
+      font-size: 3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: transform 0.15s;
+      position: relative;
+    }
+
+    .animal-btn:active { transform: scale(0.9); }
+
+    .animal-btn .animal-name {
+      display: block;
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .animal-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: #fff;
+      border-radius: 30px;
+      padding: 40px;
+      text-align: center;
+      z-index: 200;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .animal-popup.show { transform: translate(-50%, -50%) scale(1); }
+    .animal-popup .big-emoji { font-size: 6rem; }
+    .animal-popup .sound-text {
+      font-size: 2rem;
+      color: #e44d7b;
+      margin-top: 10px;
+      font-weight: 700;
+    }
+
+    /* --- いろあそび --- */
+    #colors {
+      background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
+    }
+
+    .colors-title {
+      font-size: 1.5rem;
+      color: #7b5ea7;
+      margin-bottom: 10px;
+    }
+
+    .color-question {
+      font-size: 1.3rem;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .color-target {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      max-width: 320px;
+      width: 100%;
+    }
+
+    .color-btn {
+      width: 90px;
+      height: 90px;
+      border: 4px solid #fff;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.15s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      justify-self: center;
+    }
+    .color-btn:active { transform: scale(0.9); }
+
+    .color-result {
+      margin-top: 20px;
+      font-size: 2.5rem;
+      min-height: 3rem;
+    }
+
+    .color-score {
+      margin-top: 10px;
+      font-size: 1.2rem;
+      color: #7b5ea7;
+    }
+
+    /* --- ふうせんゲーム --- */
+    #balloons {
+      background: linear-gradient(180deg, #87ceeb, #e0f7ff);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .balloon-score {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 16px;
+      padding: 8px 16px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #e44d7b;
+      z-index: 100;
+    }
+
+    .balloon {
+      position: absolute;
+      font-size: 3.5rem;
+      cursor: pointer;
+      animation: floatUp linear forwards;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+      transition: transform 0.1s;
+    }
+    .balloon:active { transform: scale(1.3); }
+
+    @keyframes floatUp {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(-110vh); opacity: 1; }
+    }
+
+    .pop-effect {
+      position: absolute;
+      font-size: 2rem;
+      pointer-events: none;
+      animation: popAnim 0.6s forwards;
+    }
+
+    @keyframes popAnim {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+
+    /* --- おえかき --- */
+    #drawing {
+      background: #fff;
+      padding: 0;
+    }
+
+    .draw-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 100;
+      flex-wrap: wrap;
+    }
+
+    .draw-color {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 3px solid #ddd;
+      cursor: pointer;
+    }
+    .draw-color.active { border-color: #333; box-shadow: 0 0 0 2px #333; }
+
+    .draw-clear {
+      background: #ff6b6b;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    canvas {
+      display: block;
+      touch-action: none;
+    }
+
+    /* --- 星エフェクト --- */
+    .star-burst {
+      position: fixed;
+      pointer-events: none;
+      z-index: 300;
+      font-size: 1.5rem;
+      animation: starPop 0.8s forwards;
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(0deg); opacity: 1; }
+      50% { transform: scale(1.5) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0.5) rotate(360deg) translateY(-60px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="back-btn" id="backBtn" onclick="goHome()">🏠</button>
+
+  <!-- ホーム画面 -->
+  <div class="screen active" id="home">
+    <div class="home-title">ようこそ！</div>
+    <div class="home-name">🌟 おとかちゃん 🌟</div>
+    <div class="menu">
+      <button class="menu-btn" onclick="goScreen('animals')">
+        <span class="icon">🐾</span>
+        <span class="label">どうぶつ</span>
+      </button>
+      <button class="menu-btn" onclick="goScreen('colors')">
+        <span class="icon">🎨</span>
+        <span class="label">いろあそび</span>
+      </button>
+      <button class="menu-btn" onclick="goScreen('balloons')">
+        <span class="icon">🎈</span>
+        <span class="label">ふうせん</span>
+      </button>
+      <button class="menu-btn" onclick="goScreen('drawing')">
+        <span class="icon">✏️</span>
+        <span class="label">おえかき</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- どうぶつ -->
+  <div class="screen" id="animals">
+    <div class="animals-title">どうぶつをタップしてね！</div>
+    <div class="animal-grid" id="animalGrid"></div>
+    <div class="animal-popup" id="animalPopup">
+      <div class="big-emoji" id="popupEmoji"></div>
+      <div class="sound-text" id="popupSound"></div>
+    </div>
+  </div>
+
+  <!-- いろあそび -->
+  <div class="screen" id="colors">
+    <div class="colors-title">いろあそび</div>
+    <div class="color-question">
+      <span class="color-target" id="colorTarget"></span><br>はどれかな？
+    </div>
+    <div class="color-grid" id="colorGrid"></div>
+    <div class="color-result" id="colorResult"></div>
+    <div class="color-score" id="colorScore"></div>
+  </div>
+
+  <!-- ふうせん -->
+  <div class="screen" id="balloons">
+    <div class="balloon-score">⭐ <span id="balloonScore">0</span></div>
+  </div>
+
+  <!-- おえかき -->
+  <div class="screen" id="drawing">
+    <canvas id="drawCanvas"></canvas>
+    <div class="draw-toolbar" id="drawToolbar"></div>
+  </div>
+
+  <script>
+    /* ===== 画面切り替え ===== */
+    let currentScreen = 'home';
+    let balloonInterval = null;
+
+    function goScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+      document.getElementById('backBtn').classList.toggle('show', name !== 'home');
+      currentScreen = name;
+
+      if (name === 'balloons') startBalloons();
+      else stopBalloons();
+
+      if (name === 'colors') startColorGame();
+      if (name === 'drawing') initCanvas();
+    }
+
+    function goHome() {
+      goScreen('home');
+    }
+
+    /* ===== どうぶつ ===== */
+    const animalData = [
+      { emoji: '🐶', name: 'いぬ', sound: 'ワンワン！' },
+      { emoji: '🐱', name: 'ねこ', sound: 'ニャー！' },
+      { emoji: '🐷', name: 'ぶた', sound: 'ブーブー！' },
+      { emoji: '🐮', name: 'うし', sound: 'モーモー！' },
+      { emoji: '🐔', name: 'にわとり', sound: 'コケコッコー！' },
+      { emoji: '🐸', name: 'かえる', sound: 'ケロケロ！' },
+      { emoji: '🐘', name: 'ぞう', sound: 'パオーン！' },
+      { emoji: '🦁', name: 'らいおん', sound: 'ガオー！' },
+      { emoji: '🐥', name: 'ひよこ', sound: 'ピヨピヨ！' },
+    ];
+
+    const animalGrid = document.getElementById('animalGrid');
+    animalData.forEach(a => {
+      const btn = document.createElement('button');
+      btn.className = 'animal-btn';
+      btn.innerHTML = `${a.emoji}<span class="animal-name">${a.name}</span>`;
+      btn.onclick = () => showAnimal(a);
+      animalGrid.appendChild(btn);
+    });
+
+    function showAnimal(a) {
+      document.getElementById('popupEmoji').textContent = a.emoji;
+      document.getElementById('popupSound').textContent = a.sound;
+      const popup = document.getElementById('animalPopup');
+      popup.classList.add('show');
+
+      // 読み上げ
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(a.name + '！' + a.sound);
+        u.lang = 'ja-JP';
+        u.rate = 0.9;
+        u.pitch = 1.3;
+        speechSynthesis.speak(u);
+      }
+
+      setTimeout(() => popup.classList.remove('show'), 1800);
+    }
+
+    /* ===== いろあそび ===== */
+    const colorData = [
+      { name: 'あか', color: '#ff4757', text: '#ff4757' },
+      { name: 'あお', color: '#3498ff', text: '#3498ff' },
+      { name: 'きいろ', color: '#ffd32a', text: '#d4a800' },
+      { name: 'みどり', color: '#2ed573', text: '#2ed573' },
+      { name: 'オレンジ', color: '#ff9f43', text: '#ff9f43' },
+      { name: 'むらさき', color: '#a55eea', text: '#a55eea' },
+    ];
+
+    let colorAnswer = null;
+    let colorStreak = 0;
+
+    function startColorGame() {
+      colorStreak = 0;
+      nextColorQuestion();
+    }
+
+    function nextColorQuestion() {
+      const target = colorData[Math.floor(Math.random() * colorData.length)];
+      colorAnswer = target;
+
+      const targetEl = document.getElementById('colorTarget');
+      targetEl.textContent = target.name;
+      targetEl.style.color = target.text;
+
+      // シャッフルして表示
+      const shuffled = [...colorData].sort(() => Math.random() - 0.5);
+      const grid = document.getElementById('colorGrid');
+      grid.innerHTML = '';
+      shuffled.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn';
+        btn.style.background = c.color;
+        btn.onclick = (e) => checkColor(c, e);
+        grid.appendChild(btn);
+      });
+
+      document.getElementById('colorResult').textContent = '';
+    }
+
+    function checkColor(c, e) {
+      const resultEl = document.getElementById('colorResult');
+      if (c.name === colorAnswer.name) {
+        colorStreak++;
+        resultEl.textContent = '⭐ すごい！せいかい！ ⭐';
+        spawnStars(e.clientX || e.touches?.[0]?.clientX || 200, e.clientY || e.touches?.[0]?.clientY || 300, 6);
+
+        if ('speechSynthesis' in window) {
+          const u = new SpeechSynthesisUtterance('すごい！せいかい！');
+          u.lang = 'ja-JP'; u.pitch = 1.4; u.rate = 1.0;
+          speechSynthesis.speak(u);
+        }
+
+        setTimeout(nextColorQuestion, 1500);
+      } else {
+        resultEl.textContent = 'もういっかい！💪';
+      }
+      document.getElementById('colorScore').textContent = '⭐'.repeat(Math.min(colorStreak, 20));
+    }
+
+    /* ===== ふうせんゲーム ===== */
+    const balloonEmojis = ['🎈', '🩷', '💛', '💚', '💙', '💜', '🧡', '⭐', '🌟', '🎀'];
+    let balloonScoreVal = 0;
+
+    function startBalloons() {
+      balloonScoreVal = 0;
+      document.getElementById('balloonScore').textContent = '0';
+      // 既存の風船を消す
+      document.querySelectorAll('.balloon').forEach(b => b.remove());
+      balloonInterval = setInterval(spawnBalloon, 900);
+    }
+
+    function stopBalloons() {
+      if (balloonInterval) { clearInterval(balloonInterval); balloonInterval = null; }
+    }
+
+    function spawnBalloon() {
+      const balloon = document.createElement('div');
+      balloon.className = 'balloon';
+      balloon.textContent = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+
+      const x = 10 + Math.random() * 80;
+      balloon.style.left = x + '%';
+      balloon.style.bottom = '-60px';
+
+      const dur = 4 + Math.random() * 3;
+      balloon.style.animationDuration = dur + 's';
+
+      balloon.onclick = (e) => popBalloon(balloon, e);
+      balloon.ontouchstart = (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        popBalloon(balloon, { clientX: t.clientX, clientY: t.clientY });
+      };
+
+      document.getElementById('balloons').appendChild(balloon);
+
+      // 画面外に出たら消す
+      setTimeout(() => { if (balloon.parentNode) balloon.remove(); }, dur * 1000 + 100);
+    }
+
+    function popBalloon(balloon, e) {
+      if (!balloon.parentNode) return;
+      const x = e.clientX || 200;
+      const y = e.clientY || 300;
+
+      // ポップエフェクト
+      const pop = document.createElement('div');
+      pop.className = 'pop-effect';
+      pop.textContent = '✨';
+      pop.style.left = (x - 16) + 'px';
+      pop.style.top = (y - 16) + 'px';
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 600);
+
+      spawnStars(x, y, 4);
+      balloon.remove();
+
+      balloonScoreVal++;
+      document.getElementById('balloonScore').textContent = balloonScoreVal;
+    }
+
+    /* ===== おえかき ===== */
+    const drawColors = ['#333', '#ff4757', '#ff9f43', '#ffd32a', '#2ed573', '#3498ff', '#a55eea', '#ff6b9d'];
+    let drawColor = '#ff6b9d';
+    let isDrawing = false;
+    let drawCtx = null;
+
+    function initCanvas() {
+      const canvas = document.getElementById('drawCanvas');
+      const toolbar = document.getElementById('drawToolbar');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - 70;
+      drawCtx = canvas.getContext('2d');
+      drawCtx.lineCap = 'round';
+      drawCtx.lineJoin = 'round';
+      drawCtx.lineWidth = 8;
+
+      // カラーボタン
+      toolbar.innerHTML = '';
+      drawColors.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'draw-color' + (c === drawColor ? ' active' : '');
+        btn.style.background = c;
+        btn.onclick = () => {
+          drawColor = c;
+          toolbar.querySelectorAll('.draw-color').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        };
+        toolbar.appendChild(btn);
+      });
+
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'draw-clear';
+      clearBtn.textContent = 'けす';
+      clearBtn.onclick = () => {
+        drawCtx.clearRect(0, 0, canvas.width, canvas.height);
+      };
+      toolbar.appendChild(clearBtn);
+
+      // 描画イベント
+      canvas.onmousedown = (e) => { isDrawing = true; drawCtx.beginPath(); drawCtx.moveTo(e.offsetX, e.offsetY); };
+      canvas.onmousemove = (e) => { if (!isDrawing) return; drawCtx.strokeStyle = drawColor; drawCtx.lineTo(e.offsetX, e.offsetY); drawCtx.stroke(); };
+      canvas.onmouseup = () => { isDrawing = false; };
+
+      canvas.ontouchstart = (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        const t = e.touches[0];
+        const r = canvas.getBoundingClientRect();
+        drawCtx.beginPath();
+        drawCtx.moveTo(t.clientX - r.left, t.clientY - r.top);
+      };
+      canvas.ontouchmove = (e) => {
+        e.preventDefault();
+        if (!isDrawing) return;
+        const t = e.touches[0];
+        const r = canvas.getBoundingClientRect();
+        drawCtx.strokeStyle = drawColor;
+        drawCtx.lineTo(t.clientX - r.left, t.clientY - r.top);
+        drawCtx.stroke();
+      };
+      canvas.ontouchend = () => { isDrawing = false; };
+    }
+
+    /* ===== 星エフェクト ===== */
+    function spawnStars(x, y, count) {
+      const stars = ['⭐', '🌟', '✨', '💫'];
+      for (let i = 0; i < count; i++) {
+        const star = document.createElement('div');
+        star.className = 'star-burst';
+        star.textContent = stars[Math.floor(Math.random() * stars.length)];
+        star.style.left = (x + (Math.random() - 0.5) * 80) + 'px';
+        star.style.top = (y + (Math.random() - 0.5) * 80) + 'px';
+        document.body.appendChild(star);
+        setTimeout(() => star.remove(), 800);
+      }
+    }
+  </script>
+</body>
+</html>
