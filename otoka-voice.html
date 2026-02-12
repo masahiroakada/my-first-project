@@ -334,7 +334,7 @@
   <!-- ホーム画面 -->
   <div class="screen active" id="home">
     <div class="home-title">ようこそ！</div>
-    <div class="home-name" onclick="speak('おとかちゃん、こんにちは！きょうも、いっしょに、あそぼうね！')">🌟 おとかちゃん 🌟</div>
+    <div class="home-name" onclick="playAudio('v_home_tap.mp3')">🌟 おとかちゃん 🌟</div>
     <div class="menu">
       <button class="menu-btn" onclick="goScreen('animals')">
         <span class="icon">🐾</span>
@@ -392,79 +392,26 @@
     let currentScreen = 'home';
     let balloonInterval = null;
 
-    /* ===== 音声ヘルパー（短フレーズ分割 + Google TTS） ===== */
-    let speakQueue = [];
-    let isSpeaking = false;
+    /* ===== 音声再生（OpenAI TTS 事前生成ファイル） ===== */
+    let currentAudio = null;
 
-    // テキストを短いフレーズに分割（短い方が抑揚が自然になる）
-    function splitPhrases(text) {
-      return text
-        .split(/(?<=[、。！？])/)
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
+    function playAudio(file) {
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      const audio = new Audio('audio/' + file);
+      currentAudio = audio;
+      audio.play().catch(() => {});
     }
 
-    function speak(text) {
-      // 再生中を全て止める
-      speakQueue = [];
-      isSpeaking = false;
-      if ('speechSynthesis' in window) speechSynthesis.cancel();
-
-      const phrases = splitPhrases(text);
-      speakQueue = phrases;
-      playNext();
+    function playRandom(files) {
+      playAudio(files[Math.floor(Math.random() * files.length)]);
     }
 
-    function playNext() {
-      if (speakQueue.length === 0) { isSpeaking = false; return; }
-      isSpeaking = true;
-      const phrase = speakQueue.shift();
-
-      const audio = new Audio();
-      audio.src = 'https://translate.google.com/translate_tts'
-        + '?ie=UTF-8&tl=ja&client=tw-ob&q=' + encodeURIComponent(phrase);
-
-      audio.onended = () => {
-        // フレーズ間に自然な間を入れる
-        const pause = phrase.endsWith('！') || phrase.endsWith('？') ? 350 : 200;
-        setTimeout(playNext, pause);
-      };
-
-      audio.play().catch(() => {
-        // Google TTSが使えない場合はWeb Speech APIにフォールバック
-        fallbackSpeak(phrase, () => {
-          const pause = phrase.endsWith('！') || phrase.endsWith('？') ? 350 : 200;
-          setTimeout(playNext, pause);
-        });
-      });
-    }
-
-    function fallbackSpeak(text, onDone) {
-      if (!('speechSynthesis' in window)) { if (onDone) onDone(); return; }
-      const voices = speechSynthesis.getVoices();
-      const jaVoices = voices.filter(v => v.lang.startsWith('ja'));
-      const priority = ['premium', 'enhanced', 'o-ren', 'hattori', 'kyoko', 'google'];
-      let voice = null;
-      for (const kw of priority) {
-        voice = jaVoices.find(v => v.name.toLowerCase().includes(kw));
-        if (voice) break;
-      }
-      if (!voice && jaVoices.length) voice = jaVoices[0];
-
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ja-JP';
-      if (voice) u.voice = voice;
-      u.pitch = 1.1;
-      u.rate = 0.9;
-      if (onDone) u.onend = onDone;
-      speechSynthesis.speak(u);
-    }
-
-    const screenGreetings = {
-      animals: 'おとかちゃん！どうぶつで、あそぼう！すきなの、タップしてね！',
-      colors: 'おとかちゃん！いろあてクイズだよ！がんばってね！',
-      balloons: 'おとかちゃん！ふうせんを、タップして、わってね！',
-      drawing: 'おとかちゃん！すきなえを、かいてね！',
+    /* ===== 画面切り替え ===== */
+    const screenAudio = {
+      animals: 'v_screen_animals.mp3',
+      colors: 'v_screen_colors.mp3',
+      balloons: 'v_screen_balloons.mp3',
+      drawing: 'v_screen_drawing.mp3',
     };
 
     function goScreen(name) {
@@ -479,27 +426,25 @@
       if (name === 'colors') startColorGame();
       if (name === 'drawing') initCanvas();
 
-      if (screenGreetings[name]) {
-        speak(screenGreetings[name]);
-      }
+      if (screenAudio[name]) playAudio(screenAudio[name]);
     }
 
     function goHome() {
       goScreen('home');
-      speak('おとかちゃん！なにして、あそぶ？');
+      playAudio('v_go_home.mp3');
     }
 
     /* ===== どうぶつ ===== */
     const animalData = [
-      { emoji: '🐶', name: 'いぬ', sound: 'ワンワン！' },
-      { emoji: '🐱', name: 'ねこ', sound: 'ニャー！' },
-      { emoji: '🐷', name: 'ぶた', sound: 'ブーブー！' },
-      { emoji: '🐮', name: 'うし', sound: 'モーモー！' },
-      { emoji: '🐔', name: 'にわとり', sound: 'コケコッコー！' },
-      { emoji: '🐸', name: 'かえる', sound: 'ケロケロ！' },
-      { emoji: '🐘', name: 'ぞう', sound: 'パオーン！' },
-      { emoji: '🦁', name: 'らいおん', sound: 'ガオー！' },
-      { emoji: '🐥', name: 'ひよこ', sound: 'ピヨピヨ！' },
+      { emoji: '🐶', name: 'いぬ', sound: 'ワンワン！', key: 'inu' },
+      { emoji: '🐱', name: 'ねこ', sound: 'ニャー！', key: 'neko' },
+      { emoji: '🐷', name: 'ぶた', sound: 'ブーブー！', key: 'buta' },
+      { emoji: '🐮', name: 'うし', sound: 'モーモー！', key: 'ushi' },
+      { emoji: '🐔', name: 'にわとり', sound: 'コケコッコー！', key: 'niwatori' },
+      { emoji: '🐸', name: 'かえる', sound: 'ケロケロ！', key: 'kaeru' },
+      { emoji: '🐘', name: 'ぞう', sound: 'パオーン！', key: 'zou' },
+      { emoji: '🦁', name: 'らいおん', sound: 'ガオー！', key: 'lion' },
+      { emoji: '🐥', name: 'ひよこ', sound: 'ピヨピヨ！', key: 'hiyoko' },
     ];
 
     const animalGrid = document.getElementById('animalGrid');
@@ -511,35 +456,26 @@
       animalGrid.appendChild(btn);
     });
 
-    const animalMessages = [
-      'おとかちゃん！{name}だよ！{sound}',
-      '{name}さんが、{sound}って、いってるよ！',
-      'おとかちゃんは、{name}、すき？{sound}',
-      '{name}だね！いっしょに、{sound}',
-    ];
-
     function showAnimal(a) {
       document.getElementById('popupEmoji').textContent = a.emoji;
       document.getElementById('popupSound').textContent = a.sound;
       const popup = document.getElementById('animalPopup');
       popup.classList.add('show');
 
-      const msg = animalMessages[Math.floor(Math.random() * animalMessages.length)]
-        .replace('{name}', a.name)
-        .replace('{sound}', a.sound);
-      speak(msg);
+      const n = Math.floor(Math.random() * 4) + 1;
+      playAudio(`v_animal_${a.key}_${n}.mp3`);
 
       setTimeout(() => popup.classList.remove('show'), 3000);
     }
 
     /* ===== いろあそび ===== */
     const colorData = [
-      { name: 'あか', color: '#ff4757', text: '#ff4757' },
-      { name: 'あお', color: '#3498ff', text: '#3498ff' },
-      { name: 'きいろ', color: '#ffd32a', text: '#d4a800' },
-      { name: 'みどり', color: '#2ed573', text: '#2ed573' },
-      { name: 'オレンジ', color: '#ff9f43', text: '#ff9f43' },
-      { name: 'むらさき', color: '#a55eea', text: '#a55eea' },
+      { name: 'あか', color: '#ff4757', text: '#ff4757', key: 'aka' },
+      { name: 'あお', color: '#3498ff', text: '#3498ff', key: 'ao' },
+      { name: 'きいろ', color: '#ffd32a', text: '#d4a800', key: 'kiiro' },
+      { name: 'みどり', color: '#2ed573', text: '#2ed573', key: 'midori' },
+      { name: 'オレンジ', color: '#ff9f43', text: '#ff9f43', key: 'orange' },
+      { name: 'むらさき', color: '#a55eea', text: '#a55eea', key: 'murasaki' },
     ];
 
     let colorAnswer = null;
@@ -558,7 +494,6 @@
       targetEl.textContent = target.name;
       targetEl.style.color = target.text;
 
-      // シャッフルして表示
       const shuffled = [...colorData].sort(() => Math.random() - 0.5);
       const grid = document.getElementById('colorGrid');
       grid.innerHTML = '';
@@ -571,23 +506,8 @@
       });
 
       document.getElementById('colorResult').textContent = '';
-
-      // 問題を読み上げ（画面切り替え時の挨拶と被らないよう少し遅延）
-      setTimeout(() => speak('おとかちゃん！' + target.name + 'は、どれかな？'), 800);
+      setTimeout(() => playAudio(`v_color_${target.key}.mp3`), 800);
     }
-
-    const correctMessages = [
-      'おとかちゃん、すごーい！せいかい！',
-      'おとかちゃん、てんさい！',
-      'やったね！おとかちゃん！せいかいだよ！',
-      'おとかちゃん、かっこいい！せいかい！',
-    ];
-
-    const wrongMessages = [
-      'おしい！もういっかい！',
-      'もういちど、やってみよう！がんばれ！',
-      'ちがうよー！もういっかい！',
-    ];
 
     function checkColor(c, e) {
       const resultEl = document.getElementById('colorResult');
@@ -596,14 +516,14 @@
         resultEl.textContent = '⭐ すごい！せいかい！ ⭐';
         spawnStars(e.clientX || e.touches?.[0]?.clientX || 200, e.clientY || e.touches?.[0]?.clientY || 300, 6);
 
-        const msg = correctMessages[Math.floor(Math.random() * correctMessages.length)];
-        speak(msg);
+        const n = Math.floor(Math.random() * 4) + 1;
+        playAudio(`v_correct_${n}.mp3`);
 
         setTimeout(nextColorQuestion, 2500);
       } else {
         resultEl.textContent = 'もういっかい！💪';
-        const msg = wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
-        speak(msg);
+        const n = Math.floor(Math.random() * 3) + 1;
+        playAudio(`v_wrong_${n}.mp3`);
       }
       document.getElementById('colorScore').textContent = '⭐'.repeat(Math.min(colorStreak, 20));
     }
@@ -615,7 +535,6 @@
     function startBalloons() {
       balloonScoreVal = 0;
       document.getElementById('balloonScore').textContent = '0';
-      // 既存の風船を消す
       document.querySelectorAll('.balloon').forEach(b => b.remove());
       balloonInterval = setInterval(spawnBalloon, 900);
     }
@@ -644,8 +563,6 @@
       };
 
       document.getElementById('balloons').appendChild(balloon);
-
-      // 画面外に出たら消す
       setTimeout(() => { if (balloon.parentNode) balloon.remove(); }, dur * 1000 + 100);
     }
 
@@ -654,7 +571,6 @@
       const x = e.clientX || 200;
       const y = e.clientY || 300;
 
-      // ポップエフェクト
       const pop = document.createElement('div');
       pop.className = 'pop-effect';
       pop.textContent = '✨';
@@ -669,16 +585,9 @@
       balloonScoreVal++;
       document.getElementById('balloonScore').textContent = balloonScoreVal;
 
-      // 節目で褒める
-      const balloonPraise = {
-        5:  'おとかちゃん！5こも、わったね！すごい！',
-        10: 'おとかちゃん！10こ！とっても、じょうず！',
-        20: 'おとかちゃん！20こ！チャンピオンだね！',
-        30: 'おとかちゃん！30こ！だれにも、まけないね！',
-        50: 'おとかちゃん！50こ！すごすぎるー！',
-      };
-      if (balloonPraise[balloonScoreVal]) {
-        speak(balloonPraise[balloonScoreVal]);
+      const balloonPraiseFiles = { 5: 'v_balloon_5.mp3', 10: 'v_balloon_10.mp3', 20: 'v_balloon_20.mp3', 30: 'v_balloon_30.mp3', 50: 'v_balloon_50.mp3' };
+      if (balloonPraiseFiles[balloonScoreVal]) {
+        playAudio(balloonPraiseFiles[balloonScoreVal]);
       }
     }
 
@@ -698,7 +607,6 @@
       drawCtx.lineJoin = 'round';
       drawCtx.lineWidth = 8;
 
-      // カラーボタン
       toolbar.innerHTML = '';
       drawColors.forEach(c => {
         const btn = document.createElement('button');
@@ -720,7 +628,6 @@
       };
       toolbar.appendChild(clearBtn);
 
-      // 描画イベント
       canvas.onmousedown = (e) => { isDrawing = true; drawCtx.beginPath(); drawCtx.moveTo(e.offsetX, e.offsetY); };
       canvas.onmousemove = (e) => { if (!isDrawing) return; drawCtx.strokeStyle = drawColor; drawCtx.lineTo(e.offsetX, e.offsetY); drawCtx.stroke(); };
       canvas.onmouseup = () => { isDrawing = false; };
@@ -747,7 +654,7 @@
 
     /* ===== 起動時のあいさつ ===== */
     window.addEventListener('load', () => {
-      setTimeout(() => speak('おとかちゃん、こんにちは！きょうは、なにして、あそぶ？'), 500);
+      setTimeout(() => playAudio('v_greeting.mp3'), 500);
     });
 
     /* ===== 星エフェクト ===== */
