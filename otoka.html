@@ -388,23 +388,43 @@
   </div>
 
   <script>
-    /* ===== 音声ヘルパー（Google Translate TTS + フォールバック） ===== */
-    let currentAudio = null;
+    /* ===== 音声ヘルパー（短フレーズ分割 + Google TTS） ===== */
+    let speakQueue = [];
+    let isSpeaking = false;
 
-    function speak(text) {
-      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-      if ('speechSynthesis' in window) speechSynthesis.cancel();
-
-      const audio = new Audio();
-      audio.src = 'https://translate.google.com/translate_tts'
-        + '?ie=UTF-8&tl=ja&client=tw-ob&q=' + encodeURIComponent(text);
-      currentAudio = audio;
-
-      audio.play().catch(() => fallbackSpeak(text));
+    function splitPhrases(text) {
+      return text.split(/(?<=[、。！？])/).map(s => s.trim()).filter(s => s.length > 0);
     }
 
-    function fallbackSpeak(text) {
-      if (!('speechSynthesis' in window)) return;
+    function speak(text) {
+      speakQueue = [];
+      isSpeaking = false;
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      speakQueue = splitPhrases(text);
+      playNext();
+    }
+
+    function playNext() {
+      if (speakQueue.length === 0) { isSpeaking = false; return; }
+      isSpeaking = true;
+      const phrase = speakQueue.shift();
+      const audio = new Audio();
+      audio.src = 'https://translate.google.com/translate_tts'
+        + '?ie=UTF-8&tl=ja&client=tw-ob&q=' + encodeURIComponent(phrase);
+      audio.onended = () => {
+        const pause = phrase.endsWith('！') || phrase.endsWith('？') ? 350 : 200;
+        setTimeout(playNext, pause);
+      };
+      audio.play().catch(() => {
+        fallbackSpeak(phrase, () => {
+          const pause = phrase.endsWith('！') || phrase.endsWith('？') ? 350 : 200;
+          setTimeout(playNext, pause);
+        });
+      });
+    }
+
+    function fallbackSpeak(text, onDone) {
+      if (!('speechSynthesis' in window)) { if (onDone) onDone(); return; }
       const voices = speechSynthesis.getVoices();
       const jaVoices = voices.filter(v => v.lang.startsWith('ja'));
       const priority = ['premium', 'enhanced', 'o-ren', 'hattori', 'kyoko', 'google'];
@@ -419,6 +439,7 @@
       if (voice) u.voice = voice;
       u.pitch = 1.1;
       u.rate = 0.9;
+      if (onDone) u.onend = onDone;
       speechSynthesis.speak(u);
     }
 

@@ -334,7 +334,7 @@
   <!-- ホーム画面 -->
   <div class="screen active" id="home">
     <div class="home-title">ようこそ！</div>
-    <div class="home-name" onclick="speak('おとかちゃん、こんにちは！きょうもいっしょにあそぼうね！', 1.4, 0.9)">🌟 おとかちゃん 🌟</div>
+    <div class="home-name" onclick="speak('おとかちゃん、こんにちは！きょうも、いっしょに、あそぼうね！')">🌟 おとかちゃん 🌟</div>
     <div class="menu">
       <button class="menu-btn" onclick="goScreen('animals')">
         <span class="icon">🐾</span>
@@ -392,32 +392,55 @@
     let currentScreen = 'home';
     let balloonInterval = null;
 
-    /* ===== 音声ヘルパー（Google Translate TTS + フォールバック） ===== */
-    let currentAudio = null;
+    /* ===== 音声ヘルパー（短フレーズ分割 + Google TTS） ===== */
+    let speakQueue = [];
+    let isSpeaking = false;
+
+    // テキストを短いフレーズに分割（短い方が抑揚が自然になる）
+    function splitPhrases(text) {
+      return text
+        .split(/(?<=[、。！？])/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+    }
 
     function speak(text) {
-      // 再生中の音声を止める
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-      }
+      // 再生中を全て止める
+      speakQueue = [];
+      isSpeaking = false;
       if ('speechSynthesis' in window) speechSynthesis.cancel();
 
-      // Google Translate TTSで自然な音声を再生
+      const phrases = splitPhrases(text);
+      speakQueue = phrases;
+      playNext();
+    }
+
+    function playNext() {
+      if (speakQueue.length === 0) { isSpeaking = false; return; }
+      isSpeaking = true;
+      const phrase = speakQueue.shift();
+
       const audio = new Audio();
-      const url = 'https://translate.google.com/translate_tts'
-        + '?ie=UTF-8&tl=ja&client=tw-ob&q=' + encodeURIComponent(text);
-      audio.src = url;
-      currentAudio = audio;
+      audio.src = 'https://translate.google.com/translate_tts'
+        + '?ie=UTF-8&tl=ja&client=tw-ob&q=' + encodeURIComponent(phrase);
+
+      audio.onended = () => {
+        // フレーズ間に自然な間を入れる
+        const pause = phrase.endsWith('！') || phrase.endsWith('？') ? 350 : 200;
+        setTimeout(playNext, pause);
+      };
 
       audio.play().catch(() => {
         // Google TTSが使えない場合はWeb Speech APIにフォールバック
-        fallbackSpeak(text);
+        fallbackSpeak(phrase, () => {
+          const pause = phrase.endsWith('！') || phrase.endsWith('？') ? 350 : 200;
+          setTimeout(playNext, pause);
+        });
       });
     }
 
-    function fallbackSpeak(text) {
-      if (!('speechSynthesis' in window)) return;
+    function fallbackSpeak(text, onDone) {
+      if (!('speechSynthesis' in window)) { if (onDone) onDone(); return; }
       const voices = speechSynthesis.getVoices();
       const jaVoices = voices.filter(v => v.lang.startsWith('ja'));
       const priority = ['premium', 'enhanced', 'o-ren', 'hattori', 'kyoko', 'google'];
@@ -433,14 +456,15 @@
       if (voice) u.voice = voice;
       u.pitch = 1.1;
       u.rate = 0.9;
+      if (onDone) u.onend = onDone;
       speechSynthesis.speak(u);
     }
 
     const screenGreetings = {
-      animals: 'おとかちゃん、どうぶつであそぼう！すきなどうぶつをタップしてね！',
-      colors: 'おとかちゃん、いろあてクイズだよ！がんばってね！',
-      balloons: 'おとかちゃん、ふうせんをタップしてわってね！',
-      drawing: 'おとかちゃん、すきなえをかいてね！',
+      animals: 'おとかちゃん！どうぶつで、あそぼう！すきなの、タップしてね！',
+      colors: 'おとかちゃん！いろあてクイズだよ！がんばってね！',
+      balloons: 'おとかちゃん！ふうせんを、タップして、わってね！',
+      drawing: 'おとかちゃん！すきなえを、かいてね！',
     };
 
     function goScreen(name) {
@@ -462,7 +486,7 @@
 
     function goHome() {
       goScreen('home');
-      speak('おとかちゃん、なにしてあそぶ？');
+      speak('おとかちゃん！なにして、あそぶ？');
     }
 
     /* ===== どうぶつ ===== */
@@ -488,10 +512,10 @@
     });
 
     const animalMessages = [
-      'おとかちゃん、{name}だよ！{sound}',
-      '{name}さんが{sound}っていってるよ！',
-      'おとかちゃんは{name}すき？{sound}',
-      '{name}だね！いっしょに{sound}',
+      'おとかちゃん！{name}だよ！{sound}',
+      '{name}さんが、{sound}って、いってるよ！',
+      'おとかちゃんは、{name}、すき？{sound}',
+      '{name}だね！いっしょに、{sound}',
     ];
 
     function showAnimal(a) {
@@ -505,7 +529,7 @@
         .replace('{sound}', a.sound);
       speak(msg);
 
-      setTimeout(() => popup.classList.remove('show'), 2200);
+      setTimeout(() => popup.classList.remove('show'), 3000);
     }
 
     /* ===== いろあそび ===== */
@@ -549,20 +573,20 @@
       document.getElementById('colorResult').textContent = '';
 
       // 問題を読み上げ（画面切り替え時の挨拶と被らないよう少し遅延）
-      setTimeout(() => speak('おとかちゃん、' + target.name + 'はどれかな？'), 800);
+      setTimeout(() => speak('おとかちゃん！' + target.name + 'は、どれかな？'), 800);
     }
 
     const correctMessages = [
       'おとかちゃん、すごーい！せいかい！',
       'おとかちゃん、てんさい！',
-      'やったね、おとかちゃん！せいかいだよ！',
+      'やったね！おとかちゃん！せいかいだよ！',
       'おとかちゃん、かっこいい！せいかい！',
     ];
 
     const wrongMessages = [
-      'おとかちゃん、おしい！もういっかい！',
-      'もういちどやってみよう！がんばれ、おとかちゃん！',
-      'ちがうよ～、もういっかいチャレンジ！',
+      'おしい！もういっかい！',
+      'もういちど、やってみよう！がんばれ！',
+      'ちがうよー！もういっかい！',
     ];
 
     function checkColor(c, e) {
@@ -573,13 +597,13 @@
         spawnStars(e.clientX || e.touches?.[0]?.clientX || 200, e.clientY || e.touches?.[0]?.clientY || 300, 6);
 
         const msg = correctMessages[Math.floor(Math.random() * correctMessages.length)];
-        speak(msg, 1.4);
+        speak(msg);
 
-        setTimeout(nextColorQuestion, 2000);
+        setTimeout(nextColorQuestion, 2500);
       } else {
         resultEl.textContent = 'もういっかい！💪';
         const msg = wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
-        speak(msg, 1.2);
+        speak(msg);
       }
       document.getElementById('colorScore').textContent = '⭐'.repeat(Math.min(colorStreak, 20));
     }
@@ -647,14 +671,14 @@
 
       // 節目で褒める
       const balloonPraise = {
-        5:  'おとかちゃん、5こもわったね！すごい！',
-        10: 'おとかちゃん、10こ！とってもじょうず！',
-        20: 'おとかちゃん、20こ！チャンピオンだね！',
-        30: 'おとかちゃん、30こ！だれにもまけないね！',
-        50: 'おとかちゃん、50こ！すごすぎるー！',
+        5:  'おとかちゃん！5こも、わったね！すごい！',
+        10: 'おとかちゃん！10こ！とっても、じょうず！',
+        20: 'おとかちゃん！20こ！チャンピオンだね！',
+        30: 'おとかちゃん！30こ！だれにも、まけないね！',
+        50: 'おとかちゃん！50こ！すごすぎるー！',
       };
       if (balloonPraise[balloonScoreVal]) {
-        speak(balloonPraise[balloonScoreVal], 1.4);
+        speak(balloonPraise[balloonScoreVal]);
       }
     }
 
@@ -723,7 +747,7 @@
 
     /* ===== 起動時のあいさつ ===== */
     window.addEventListener('load', () => {
-      setTimeout(() => speak('おとかちゃん、こんにちは！きょうはなにしてあそぶ？', 1.4, 0.9), 500);
+      setTimeout(() => speak('おとかちゃん、こんにちは！きょうは、なにして、あそぶ？'), 500);
     });
 
     /* ===== 星エフェクト ===== */
