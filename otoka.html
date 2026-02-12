@@ -334,7 +334,7 @@
   <!-- ホーム画面 -->
   <div class="screen active" id="home">
     <div class="home-title">ようこそ！</div>
-    <div class="home-name">🌟 おとかちゃん 🌟</div>
+    <div class="home-name" onclick="speak('おとかちゃん、こんにちは！きょうもいっしょにあそぼうね！', 1.4, 0.9)">🌟 おとかちゃん 🌟</div>
     <div class="menu">
       <button class="menu-btn" onclick="goScreen('animals')">
         <span class="icon">🐾</span>
@@ -392,6 +392,24 @@
     let currentScreen = 'home';
     let balloonInterval = null;
 
+    /* ===== 音声ヘルパー ===== */
+    function speak(text, pitch = 1.3, rate = 0.95) {
+      if (!('speechSynthesis' in window)) return;
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      u.pitch = pitch;
+      u.rate = rate;
+      speechSynthesis.speak(u);
+    }
+
+    const screenGreetings = {
+      animals: 'おとかちゃん、どうぶつであそぼう！すきなどうぶつをタップしてね！',
+      colors: 'おとかちゃん、いろあてクイズだよ！がんばってね！',
+      balloons: 'おとかちゃん、ふうせんをタップしてわってね！',
+      drawing: 'おとかちゃん、すきなえをかいてね！',
+    };
+
     function goScreen(name) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(name).classList.add('active');
@@ -403,10 +421,15 @@
 
       if (name === 'colors') startColorGame();
       if (name === 'drawing') initCanvas();
+
+      if (screenGreetings[name]) {
+        speak(screenGreetings[name]);
+      }
     }
 
     function goHome() {
       goScreen('home');
+      speak('おとかちゃん、なにしてあそぶ？');
     }
 
     /* ===== どうぶつ ===== */
@@ -431,22 +454,25 @@
       animalGrid.appendChild(btn);
     });
 
+    const animalMessages = [
+      'おとかちゃん、{name}だよ！{sound}',
+      '{name}さんが{sound}っていってるよ！',
+      'おとかちゃんは{name}すき？{sound}',
+      '{name}だね！いっしょに{sound}',
+    ];
+
     function showAnimal(a) {
       document.getElementById('popupEmoji').textContent = a.emoji;
       document.getElementById('popupSound').textContent = a.sound;
       const popup = document.getElementById('animalPopup');
       popup.classList.add('show');
 
-      // 読み上げ
-      if ('speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(a.name + '！' + a.sound);
-        u.lang = 'ja-JP';
-        u.rate = 0.9;
-        u.pitch = 1.3;
-        speechSynthesis.speak(u);
-      }
+      const msg = animalMessages[Math.floor(Math.random() * animalMessages.length)]
+        .replace('{name}', a.name)
+        .replace('{sound}', a.sound);
+      speak(msg);
 
-      setTimeout(() => popup.classList.remove('show'), 1800);
+      setTimeout(() => popup.classList.remove('show'), 2200);
     }
 
     /* ===== いろあそび ===== */
@@ -488,7 +514,23 @@
       });
 
       document.getElementById('colorResult').textContent = '';
+
+      // 問題を読み上げ（画面切り替え時の挨拶と被らないよう少し遅延）
+      setTimeout(() => speak('おとかちゃん、' + target.name + 'はどれかな？'), 800);
     }
+
+    const correctMessages = [
+      'おとかちゃん、すごーい！せいかい！',
+      'おとかちゃん、てんさい！',
+      'やったね、おとかちゃん！せいかいだよ！',
+      'おとかちゃん、かっこいい！せいかい！',
+    ];
+
+    const wrongMessages = [
+      'おとかちゃん、おしい！もういっかい！',
+      'もういちどやってみよう！がんばれ、おとかちゃん！',
+      'ちがうよ～、もういっかいチャレンジ！',
+    ];
 
     function checkColor(c, e) {
       const resultEl = document.getElementById('colorResult');
@@ -497,15 +539,14 @@
         resultEl.textContent = '⭐ すごい！せいかい！ ⭐';
         spawnStars(e.clientX || e.touches?.[0]?.clientX || 200, e.clientY || e.touches?.[0]?.clientY || 300, 6);
 
-        if ('speechSynthesis' in window) {
-          const u = new SpeechSynthesisUtterance('すごい！せいかい！');
-          u.lang = 'ja-JP'; u.pitch = 1.4; u.rate = 1.0;
-          speechSynthesis.speak(u);
-        }
+        const msg = correctMessages[Math.floor(Math.random() * correctMessages.length)];
+        speak(msg, 1.4);
 
-        setTimeout(nextColorQuestion, 1500);
+        setTimeout(nextColorQuestion, 2000);
       } else {
         resultEl.textContent = 'もういっかい！💪';
+        const msg = wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
+        speak(msg, 1.2);
       }
       document.getElementById('colorScore').textContent = '⭐'.repeat(Math.min(colorStreak, 20));
     }
@@ -570,6 +611,18 @@
 
       balloonScoreVal++;
       document.getElementById('balloonScore').textContent = balloonScoreVal;
+
+      // 節目で褒める
+      const balloonPraise = {
+        5:  'おとかちゃん、5こもわったね！すごい！',
+        10: 'おとかちゃん、10こ！とってもじょうず！',
+        20: 'おとかちゃん、20こ！チャンピオンだね！',
+        30: 'おとかちゃん、30こ！だれにもまけないね！',
+        50: 'おとかちゃん、50こ！すごすぎるー！',
+      };
+      if (balloonPraise[balloonScoreVal]) {
+        speak(balloonPraise[balloonScoreVal], 1.4);
+      }
     }
 
     /* ===== おえかき ===== */
@@ -634,6 +687,11 @@
       };
       canvas.ontouchend = () => { isDrawing = false; };
     }
+
+    /* ===== 起動時のあいさつ ===== */
+    window.addEventListener('load', () => {
+      setTimeout(() => speak('おとかちゃん、こんにちは！きょうはなにしてあそぶ？', 1.4, 0.9), 500);
+    });
 
     /* ===== 星エフェクト ===== */
     function spawnStars(x, y, count) {
