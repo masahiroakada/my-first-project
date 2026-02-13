@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>めいちゃんの ぬりえ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      background: #fafafa;
+    }
+
+    /* ホーム */
+    #home {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+      padding: 16px;
+    }
+
+    .home-name {
+      font-size: 2.4rem;
+      color: #e91e63;
+      margin-bottom: 24px;
+      animation: bounce 1.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .gallery-item {
+      background: #fff;
+      border: 3px solid #f8bbd0;
+      border-radius: 16px;
+      padding: 10px 6px 6px;
+      cursor: pointer;
+      transition: transform 0.15s;
+      text-align: center;
+    }
+    .gallery-item:active { transform: scale(0.93); }
+    .gallery-item .thumb { font-size: 2.8rem; }
+    .gallery-item .name {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* ぬりえ画面 */
+    #paint {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+    #paint.active { display: flex; }
+
+    .toolbar-top {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      gap: 8px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      z-index: 10;
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .picture-title {
+      flex: 1;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e91e63;
+      text-align: center;
+    }
+
+    .btn-reset {
+      background: #ff8a80;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-reset:active { opacity: 0.7; }
+
+    .canvas-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .canvas-area canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    #outlineCanvas { z-index: 2; pointer-events: none; }
+    #colorCanvas { z-index: 1; }
+
+    .toolbar-bottom {
+      display: flex;
+      align-items: center;
+      padding: 10px 8px;
+      gap: 0;
+      background: #fff;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+      z-index: 10;
+      overflow-x: auto;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .color-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 3px solid #eee;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+      margin: 3px;
+    }
+    .color-btn:active { transform: scale(0.9); }
+    .color-btn.active {
+      border-color: #333;
+      transform: scale(1.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .tool-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 3px solid #eee;
+      cursor: pointer;
+      background: #fff;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin: 3px;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .tool-btn:active { transform: scale(0.9); }
+    .tool-btn.active {
+      border-color: #333;
+      transform: scale(1.15);
+    }
+
+    /* 完成メッセージ */
+    .complete-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .complete-overlay.show { display: flex; }
+
+    .complete-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 30px 40px;
+      text-align: center;
+      animation: pop 0.4s;
+    }
+
+    .complete-card .emoji { font-size: 4rem; }
+    .complete-card .msg {
+      font-size: 1.4rem;
+      color: #e91e63;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+    .complete-card .sub { color: #888; font-size: 0.9rem; }
+    .complete-card button {
+      margin-top: 16px;
+      background: #e91e63;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ホーム -->
+  <div id="home">
+    <div class="home-name">🎨 めいちゃんの ぬりえ 🎨</div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <!-- ぬりえ画面 -->
+  <div id="paint">
+    <div class="toolbar-top">
+      <button class="btn-back" onclick="backToHome()">🏠</button>
+      <div class="picture-title" id="pictureTitle"></div>
+      <button class="btn-reset" onclick="resetCanvas()">やりなおす</button>
+    </div>
+    <div class="canvas-area" id="canvasArea">
+      <canvas id="colorCanvas"></canvas>
+      <canvas id="outlineCanvas"></canvas>
+    </div>
+    <div class="toolbar-bottom" id="toolbar"></div>
+  </div>
+
+  <!-- 完成メッセージ -->
+  <div class="complete-overlay" id="completeOverlay">
+    <div class="complete-card">
+      <div class="emoji">🎉</div>
+      <div class="msg">めいちゃん、すごい！<br>かんせい！</div>
+      <div class="sub">とってもじょうずだね！</div>
+      <button onclick="closeComplete()">もどる</button>
+    </div>
+  </div>
+
+  <script>
+    /* ===== ぬりえデータ（SVGパスで線画を定義） ===== */
+    const PICTURES = [
+      {
+        name: 'おはな',
+        emoji: '🌸',
+        draw(ctx, w, h) {
+          const cx = w / 2, cy = h / 2 - 20, r = Math.min(w, h) * 0.15;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#333';
+          // 花びら
+          for (let i = 0; i < 6; i++) {
+            const a = (i * 60) * Math.PI / 180;
+            ctx.beginPath();
+            ctx.ellipse(cx + r * 0.7 * Math.cos(a), cy + r * 0.7 * Math.sin(a), r * 0.55, r * 0.3, a, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          // 中心
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.3, 0, Math.PI * 2);
+          ctx.stroke();
+          // 茎
+          ctx.beginPath();
+          ctx.moveTo(cx, cy + r * 0.7);
+          ctx.quadraticCurveTo(cx + 15, cy + r * 1.8, cx - 5, cy + r * 2.6);
+          ctx.stroke();
+          // 葉
+          ctx.beginPath();
+          ctx.ellipse(cx + 25, cy + r * 1.6, r * 0.5, r * 0.2, 0.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      },
+      {
+        name: 'おさかな',
+        emoji: '🐟',
+        draw(ctx, w, h) {
+          const cx = w / 2, cy = h / 2, s = Math.min(w, h) * 0.3;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#333';
+          // 体
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, s, s * 0.55, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          // 尾
+          ctx.beginPath();
+          ctx.moveTo(cx + s * 0.85, cy - s * 0.15);
+          ctx.lineTo(cx + s * 1.4, cy - s * 0.5);
+          ctx.lineTo(cx + s * 1.4, cy + s * 0.5);
+          ctx.lineTo(cx + s * 0.85, cy + s * 0.15);
+          ctx.stroke();
+          // 目
+          ctx.beginPath();
+          ctx.arc(cx - s * 0.45, cy - s * 0.1, s * 0.1, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx - s * 0.47, cy - s * 0.12, s * 0.04, 0, Math.PI * 2);
+          ctx.fillStyle = '#333';
+          ctx.fill();
+          // ひれ
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 0.1, cy + s * 0.2);
+          ctx.quadraticCurveTo(cx + s * 0.1, cy + s * 0.7, cx + s * 0.4, cy + s * 0.3);
+          ctx.stroke();
+          // うろこ模様
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.arc(cx - s * 0.05 + i * s * 0.25, cy, s * 0.12, 0.3, Math.PI - 0.3);
+            ctx.stroke();
+          }
+        }
+      },
+      {
+        name: 'おうち',
+        emoji: '🏠',
+        draw(ctx, w, h) {
+          const cx = w / 2, s = Math.min(w, h) * 0.28;
+          const top = h * 0.2;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#333';
+          // 屋根
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 1.3, top + s);
+          ctx.lineTo(cx, top);
+          ctx.lineTo(cx + s * 1.3, top + s);
+          ctx.closePath();
+          ctx.stroke();
+          // 壁
+          ctx.strokeRect(cx - s, top + s, s * 2, s * 1.6);
+          // ドア
+          ctx.strokeRect(cx - s * 0.25, top + s + s * 0.7, s * 0.5, s * 0.9);
+          // ドアノブ
+          ctx.beginPath();
+          ctx.arc(cx + s * 0.12, top + s * 2.15, 4, 0, Math.PI * 2);
+          ctx.stroke();
+          // 窓左
+          ctx.strokeRect(cx - s * 0.8, top + s + s * 0.25, s * 0.4, s * 0.4);
+          ctx.moveTo(cx - s * 0.6, top + s + s * 0.25);
+          ctx.lineTo(cx - s * 0.6, top + s + s * 0.65);
+          ctx.stroke();
+          // 窓右
+          ctx.strokeRect(cx + s * 0.4, top + s + s * 0.25, s * 0.4, s * 0.4);
+          ctx.beginPath();
+          ctx.moveTo(cx + s * 0.6, top + s + s * 0.25);
+          ctx.lineTo(cx + s * 0.6, top + s + s * 0.65);
+          ctx.stroke();
+          // 煙突
+          ctx.strokeRect(cx + s * 0.5, top - s * 0.1, s * 0.3, s * 0.5);
+        }
+      },
+      {
+        name: 'ちょうちょ',
+        emoji: '🦋',
+        draw(ctx, w, h) {
+          const cx = w / 2, cy = h / 2, s = Math.min(w, h) * 0.22;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#333';
+          // 左上の羽
+          ctx.beginPath();
+          ctx.ellipse(cx - s * 0.7, cy - s * 0.4, s * 0.8, s * 0.55, -0.3, 0, Math.PI * 2);
+          ctx.stroke();
+          // 右上の羽
+          ctx.beginPath();
+          ctx.ellipse(cx + s * 0.7, cy - s * 0.4, s * 0.8, s * 0.55, 0.3, 0, Math.PI * 2);
+          ctx.stroke();
+          // 左下の羽
+          ctx.beginPath();
+          ctx.ellipse(cx - s * 0.5, cy + s * 0.5, s * 0.55, s * 0.4, -0.4, 0, Math.PI * 2);
+          ctx.stroke();
+          // 右下の羽
+          ctx.beginPath();
+          ctx.ellipse(cx + s * 0.5, cy + s * 0.5, s * 0.55, s * 0.4, 0.4, 0, Math.PI * 2);
+          ctx.stroke();
+          // 体
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, s * 0.12, s * 0.8, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          // 触覚
+          ctx.beginPath();
+          ctx.moveTo(cx - 3, cy - s * 0.75);
+          ctx.quadraticCurveTo(cx - s * 0.4, cy - s * 1.4, cx - s * 0.5, cy - s * 1.3);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx + 3, cy - s * 0.75);
+          ctx.quadraticCurveTo(cx + s * 0.4, cy - s * 1.4, cx + s * 0.5, cy - s * 1.3);
+          ctx.stroke();
+          // 羽の模様
+          ctx.beginPath();
+          ctx.arc(cx - s * 0.7, cy - s * 0.4, s * 0.25, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx + s * 0.7, cy - s * 0.4, s * 0.25, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      },
+      {
+        name: 'くるま',
+        emoji: '🚗',
+        draw(ctx, w, h) {
+          const cx = w / 2, cy = h / 2 + 20, s = Math.min(w, h) * 0.2;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#333';
+          // ボディ下
+          ctx.beginPath();
+          ctx.roundRect(cx - s * 1.5, cy - s * 0.3, s * 3, s * 0.9, 12);
+          ctx.stroke();
+          // ボディ上（窓）
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 0.9, cy - s * 0.3);
+          ctx.lineTo(cx - s * 0.5, cy - s * 1.1);
+          ctx.lineTo(cx + s * 0.7, cy - s * 1.1);
+          ctx.lineTo(cx + s * 1.0, cy - s * 0.3);
+          ctx.stroke();
+          // 窓の仕切り
+          ctx.beginPath();
+          ctx.moveTo(cx + s * 0.05, cy - s * 1.1);
+          ctx.lineTo(cx + s * 0.05, cy - s * 0.3);
+          ctx.stroke();
+          // 左タイヤ
+          ctx.beginPath();
+          ctx.arc(cx - s * 0.8, cy + s * 0.6, s * 0.35, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx - s * 0.8, cy + s * 0.6, s * 0.18, 0, Math.PI * 2);
+          ctx.stroke();
+          // 右タイヤ
+          ctx.beginPath();
+          ctx.arc(cx + s * 0.8, cy + s * 0.6, s * 0.35, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx + s * 0.8, cy + s * 0.6, s * 0.18, 0, Math.PI * 2);
+          ctx.stroke();
+          // ヘッドライト
+          ctx.beginPath();
+          ctx.ellipse(cx - s * 1.45, cy + s * 0.05, s * 0.12, s * 0.18, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      },
+      {
+        name: 'ねこ',
+        emoji: '🐱',
+        draw(ctx, w, h) {
+          const cx = w / 2, cy = h / 2, s = Math.min(w, h) * 0.2;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#333';
+          // 体
+          ctx.beginPath();
+          ctx.ellipse(cx, cy + s * 0.8, s * 0.9, s * 0.7, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          // 顔
+          ctx.beginPath();
+          ctx.arc(cx, cy - s * 0.3, s * 0.7, 0, Math.PI * 2);
+          ctx.stroke();
+          // 左耳
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 0.55, cy - s * 0.7);
+          ctx.lineTo(cx - s * 0.7, cy - s * 1.3);
+          ctx.lineTo(cx - s * 0.2, cy - s * 0.85);
+          ctx.stroke();
+          // 右耳
+          ctx.beginPath();
+          ctx.moveTo(cx + s * 0.55, cy - s * 0.7);
+          ctx.lineTo(cx + s * 0.7, cy - s * 1.3);
+          ctx.lineTo(cx + s * 0.2, cy - s * 0.85);
+          ctx.stroke();
+          // 目
+          ctx.beginPath();
+          ctx.ellipse(cx - s * 0.25, cy - s * 0.35, s * 0.12, s * 0.15, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.ellipse(cx + s * 0.25, cy - s * 0.35, s * 0.12, s * 0.15, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          // 瞳
+          ctx.beginPath();
+          ctx.arc(cx - s * 0.25, cy - s * 0.33, s * 0.05, 0, Math.PI * 2);
+          ctx.fillStyle = '#333'; ctx.fill();
+          ctx.beginPath();
+          ctx.arc(cx + s * 0.25, cy - s * 0.33, s * 0.05, 0, Math.PI * 2);
+          ctx.fill();
+          // 鼻
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - s * 0.12);
+          ctx.lineTo(cx - s * 0.07, cy - s * 0.04);
+          ctx.lineTo(cx + s * 0.07, cy - s * 0.04);
+          ctx.closePath();
+          ctx.stroke();
+          // 口
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - s * 0.04);
+          ctx.lineTo(cx, cy + s * 0.06);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx - s * 0.1, cy + s * 0.08, s * 0.1, Math.PI, 0);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx + s * 0.1, cy + s * 0.08, s * 0.1, Math.PI, 0);
+          ctx.stroke();
+          // ひげ
+          const hy = cy - s * 0.05;
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 0.2, hy); ctx.lineTo(cx - s * 0.7, hy - s * 0.1); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 0.2, hy + s*0.1); ctx.lineTo(cx - s * 0.7, hy + s * 0.15); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx + s * 0.2, hy); ctx.lineTo(cx + s * 0.7, hy - s * 0.1); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx + s * 0.2, hy + s*0.1); ctx.lineTo(cx + s * 0.7, hy + s * 0.15); ctx.stroke();
+          // しっぽ
+          ctx.beginPath();
+          ctx.moveTo(cx + s * 0.75, cy + s * 1.0);
+          ctx.quadraticCurveTo(cx + s * 1.6, cy + s * 0.3, cx + s * 1.2, cy + s * 0.0);
+          ctx.stroke();
+        }
+      },
+    ];
+
+    /* ===== カラーパレット ===== */
+    const PALETTE = [
+      '#e53935', '#ff7043', '#ffb300', '#fff176',
+      '#66bb6a', '#26a69a', '#42a5f5', '#5c6bc0',
+      '#ab47bc', '#ec407a', '#8d6e63', '#fff',
+      '#78909c', '#263238',
+    ];
+
+    /* ===== ギャラリー ===== */
+    const gallery = document.getElementById('gallery');
+    PICTURES.forEach((p, i) => {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.innerHTML = `<div class="thumb">${p.emoji}</div><div class="name">${p.name}</div>`;
+      item.onclick = () => openPaint(i);
+      gallery.appendChild(item);
+    });
+
+    /* ===== ぬりえ画面 ===== */
+    let colorCanvas, colorCtx, outlineCanvas, outlineCtx;
+    let currentColor = PALETTE[0];
+    let brushSize = 18;
+    let isEraser = false;
+    let painting = false;
+    let currentPicture = 0;
+
+    function openPaint(idx) {
+      currentPicture = idx;
+      document.getElementById('home').style.display = 'none';
+      document.getElementById('paint').classList.add('active');
+      document.getElementById('pictureTitle').textContent = `めいちゃんの ${PICTURES[idx].name}`;
+
+      setupCanvas();
+      buildToolbar();
+      drawOutline();
+    }
+
+    function backToHome() {
+      document.getElementById('paint').classList.remove('active');
+      document.getElementById('home').style.display = '';
+    }
+
+    function setupCanvas() {
+      const area = document.getElementById('canvasArea');
+      colorCanvas = document.getElementById('colorCanvas');
+      outlineCanvas = document.getElementById('outlineCanvas');
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = area.clientWidth;
+      const h = area.clientHeight;
+
+      [colorCanvas, outlineCanvas].forEach(c => {
+        c.width = w * dpr;
+        c.height = h * dpr;
+        c.style.width = w + 'px';
+        c.style.height = h + 'px';
+        c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+      });
+
+      colorCtx = colorCanvas.getContext('2d');
+      outlineCtx = outlineCanvas.getContext('2d');
+
+      // 白で塗りつぶし
+      colorCtx.fillStyle = '#fff';
+      colorCtx.fillRect(0, 0, w, h);
+
+      // 描画イベント
+      const getPos = (e) => {
+        const rect = colorCanvas.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+      };
+
+      colorCanvas.onmousedown = (e) => { painting = true; paint(getPos(e)); };
+      colorCanvas.onmousemove = (e) => { if (painting) paint(getPos(e)); };
+      colorCanvas.onmouseup = () => { painting = false; colorCtx.beginPath(); };
+      colorCanvas.onmouseleave = () => { painting = false; colorCtx.beginPath(); };
+
+      colorCanvas.ontouchstart = (e) => { e.preventDefault(); painting = true; paint(getPos(e)); };
+      colorCanvas.ontouchmove = (e) => { e.preventDefault(); if (painting) paint(getPos(e)); };
+      colorCanvas.ontouchend = () => { painting = false; colorCtx.beginPath(); };
+    }
+
+    function paint(pos) {
+      colorCtx.lineCap = 'round';
+      colorCtx.lineJoin = 'round';
+      colorCtx.lineWidth = isEraser ? brushSize * 2 : brushSize;
+
+      if (isEraser) {
+        colorCtx.globalCompositeOperation = 'source-over';
+        colorCtx.strokeStyle = '#fff';
+      } else {
+        colorCtx.globalCompositeOperation = 'source-over';
+        colorCtx.strokeStyle = currentColor;
+      }
+
+      colorCtx.lineTo(pos.x, pos.y);
+      colorCtx.stroke();
+      colorCtx.beginPath();
+      colorCtx.moveTo(pos.x, pos.y);
+    }
+
+    function drawOutline() {
+      const w = outlineCanvas.clientWidth;
+      const h = outlineCanvas.clientHeight;
+      outlineCtx.clearRect(0, 0, w, h);
+      PICTURES[currentPicture].draw(outlineCtx, w, h);
+    }
+
+    function resetCanvas() {
+      const w = colorCanvas.clientWidth;
+      const h = colorCanvas.clientHeight;
+      colorCtx.globalCompositeOperation = 'source-over';
+      colorCtx.fillStyle = '#fff';
+      colorCtx.fillRect(0, 0, w, h);
+      colorCtx.beginPath();
+    }
+
+    function buildToolbar() {
+      const toolbar = document.getElementById('toolbar');
+      toolbar.innerHTML = '';
+
+      PALETTE.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn' + (c === currentColor && !isEraser ? ' active' : '');
+        btn.style.background = c;
+        if (c === '#fff') btn.style.border = '3px solid #ccc';
+        btn.onclick = () => {
+          isEraser = false;
+          currentColor = c;
+          updateToolbar();
+        };
+        toolbar.appendChild(btn);
+      });
+
+      // けしごむ
+      const eraser = document.createElement('button');
+      eraser.className = 'tool-btn' + (isEraser ? ' active' : '');
+      eraser.textContent = '🩹';
+      eraser.onclick = () => {
+        isEraser = true;
+        updateToolbar();
+      };
+      toolbar.appendChild(eraser);
+
+      // 太いペン
+      const thick = document.createElement('button');
+      thick.className = 'tool-btn' + (brushSize >= 28 ? ' active' : '');
+      thick.textContent = '⬤';
+      thick.style.fontSize = '1.4rem';
+      thick.onclick = () => {
+        brushSize = 28;
+        updateToolbar();
+      };
+      toolbar.appendChild(thick);
+
+      // 細いペン
+      const thin = document.createElement('button');
+      thin.className = 'tool-btn' + (brushSize < 28 ? ' active' : '');
+      thin.textContent = '•';
+      thin.style.fontSize = '1.8rem';
+      thin.onclick = () => {
+        brushSize = 14;
+        updateToolbar();
+      };
+      toolbar.appendChild(thin);
+
+      // かんせいボタン
+      const done = document.createElement('button');
+      done.className = 'tool-btn';
+      done.textContent = '🎉';
+      done.onclick = showComplete;
+      toolbar.appendChild(done);
+    }
+
+    function updateToolbar() {
+      buildToolbar();
+    }
+
+    function showComplete() {
+      document.getElementById('completeOverlay').classList.add('show');
+    }
+
+    function closeComplete() {
+      document.getElementById('completeOverlay').classList.remove('show');
+    }
+  </script>
+</body>
+</html>
