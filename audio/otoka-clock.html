@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>おとかちゃんの とけいアプリ</title>
+  <style>
+    :root{
+      --pink:#ff6b9d;
+      --pink2:#e44d7b;
+      --purple:#7c5cbf;
+      --green:#2ed573;
+      --blue:#1976d2;
+      --orange:#e65100;
+
+      --shadow: 0 8px 30px rgba(0,0,0,.12);
+      --shadow2: 0 3px 14px rgba(0,0,0,.12);
+      --radius: 22px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* ===== ヘッダー（固定）===== */
+    .app-header{
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 500;
+      padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255,255,255,.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+
+    .header-left{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mascot{
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: var(--shadow2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex: 0 0 auto;
+    }
+
+    .speech{
+      background: #fff;
+      box-shadow: var(--shadow2);
+      border-radius: 18px;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: #444;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .header-right{
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex: 0 0 auto;
+    }
+
+    .toggle{
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: var(--shadow2);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: transform .12s;
+    }
+    .toggle:active{ transform: scale(.94); }
+    .toggle.on{ outline: 3px solid rgba(255,107,157,.35); }
+
+    /* トースト */
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      z-index: 800;
+      background: rgba(0,0,0,.78);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      box-shadow: var(--shadow2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+
+    /* ===== 画面 ===== */
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding:
+        calc(84px + env(safe-area-inset-top))
+        16px
+        calc(24px + env(safe-area-inset-bottom));
+    }
+    .screen.active{
+      display: flex;
+      animation: fadeIn .24s ease;
+    }
+    @keyframes fadeIn{
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 戻るボタン（ホームへ） */
+    .back-btn {
+      position: fixed;
+      top: calc(82px + env(safe-area-inset-top));
+      left: 14px;
+      z-index: 600;
+      background: rgba(255,255,255,0.95);
+      border: none;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: var(--shadow2);
+      display: none;
+    }
+    .back-btn.show { display: block; }
+    .back-btn:active{ transform: scale(.94); }
+
+    /* ===== ホーム ===== */
+    #home{
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    }
+    .home-title {
+      font-size: 1.5rem;
+      color: var(--pink2);
+      margin-bottom: 4px;
+      font-weight: 800;
+      text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    }
+    .home-name {
+      font-size: 2.4rem;
+      color: var(--pink);
+      margin-bottom: 22px;
+      animation: bounce 1.5s infinite;
+      font-weight: 900;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .menu{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .menu-btn{
+      background: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 18px 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .menu-btn:active{ transform: scale(0.93); }
+    .menu-btn .icon{ font-size: 2.6rem; }
+    .menu-btn .label{
+      color: #555;
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-align: center;
+      line-height: 1.05rem;
+    }
+
+    /* ===== 時計共通 ===== */
+    .clock-container {
+      position: relative;
+      width: min(320px, 86vw);
+      height: min(320px, 86vw);
+      margin: 0 auto;
+    }
+    .clock-face{
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: var(--shadow);
+      position: relative;
+      border: 6px solid #f0e6ff;
+    }
+
+    .clock-number{
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #444;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s, color 0.2s;
+    }
+    .clock-number:active{ transform: scale(1.18); }
+
+    .clock-number.highlight{
+      background: var(--pink);
+      color: #fff;
+      transform: scale(1.28);
+      box-shadow: 0 4px 16px rgba(255,107,157,0.35);
+    }
+    .clock-number.correct{
+      background: var(--green);
+      color: #fff;
+      transform: scale(1.28);
+      animation: pop 0.4s;
+    }
+    .clock-number.wrong{
+      background: #ff6b6b;
+      color: #fff;
+      animation: shake 0.4s;
+    }
+    @keyframes pop{
+      0%{ transform: scale(1.28); }
+      50%{ transform: scale(1.6); }
+      100%{ transform: scale(1.28); }
+    }
+    @keyframes shake{
+      0%,100%{ transform: translateX(0); }
+      25%{ transform: translateX(-6px); }
+      75%{ transform: translateX(6px); }
+    }
+
+    .clock-center{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: var(--pink2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    .clock-hand{
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      border-radius: 6px;
+    }
+    .hand-hour{
+      width: 7px;
+      height: 72px;
+      background: var(--pink2);
+      margin-left: -3.5px;
+      z-index: 5;
+    }
+    .hand-minute{
+      width: 5px;
+      height: 106px;
+      background: var(--purple);
+      margin-left: -2.5px;
+      z-index: 6;
+    }
+
+    /* ===== 共通タイトル ===== */
+    .screen-title{
+      font-size: 1.3rem;
+      font-weight: 900;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .hint{
+      margin-top: 10px;
+      font-size: 0.95rem;
+      color: rgba(0,0,0,.55);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    /* ===== すうじをおぼえよう ===== */
+    #learn{
+      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    }
+    .learn-title{ color: #2e7d32; }
+    .learn-display{
+      margin-top: 18px;
+      text-align: center;
+      min-height: 84px;
+    }
+    .learn-big-number{
+      font-size: 4rem;
+      font-weight: 900;
+      color: var(--pink);
+      animation: pop 0.3s;
+    }
+    .learn-label{
+      font-size: 1.1rem;
+      color: #666;
+      margin-top: 4px;
+      font-weight: 800;
+    }
+
+    /* ===== すうじクイズ ===== */
+    #quiz{
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    }
+    .quiz-question{
+      font-size: 1.55rem;
+      color: var(--blue);
+      margin-bottom: 14px;
+      font-weight: 900;
+      min-height: 2em;
+      text-align: center;
+    }
+    .quiz-question .target-num{
+      font-size: 2.2rem;
+      color: var(--pink2);
+      padding: 0 6px;
+    }
+    .quiz-result{
+      margin-top: 14px;
+      font-size: 2rem;
+      min-height: 2.5rem;
+      font-weight: 900;
+    }
+    .quiz-score{
+      margin-top: 6px;
+      font-size: 1.1rem;
+      color: var(--blue);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    /* ===== いまなんじ ===== */
+    #time{
+      background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    }
+    .time-title{ color: var(--orange); }
+    .time-display{
+      margin-top: 18px;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--orange);
+      cursor: pointer;
+    }
+    .time-label{
+      margin-top: 4px;
+      font-size: 1rem;
+      color: rgba(0,0,0,.55);
+      font-weight: 800;
+      text-align: center;
+    }
+
+    /* ===== とけいクイズ ===== */
+    #clockquiz{
+      background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    }
+    .clockquiz-title{ color: #7b1fa2; }
+
+    .mode-row{
+      display: flex;
+      gap: 10px;
+      margin: 8px 0 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .mode-btn{
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      background: rgba(255,255,255,.85);
+      box-shadow: var(--shadow2);
+      color: #7b1fa2;
+      transition: transform .12s;
+    }
+    .mode-btn:active{ transform: scale(.95); }
+    .mode-btn.on{
+      outline: 3px solid rgba(123,31,162,.25);
+      background: #fff;
+    }
+
+    .clockquiz-options{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+      max-width: 320px;
+      width: 100%;
+    }
+    .clockquiz-opt{
+      background: #fff;
+      border: 3px solid #e1bee7;
+      border-radius: 18px;
+      padding: 16px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #7b1fa2;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .clockquiz-opt:active{ transform: scale(0.93); }
+    .clockquiz-opt.correct{
+      background: #c8e6c9;
+      border-color: #4caf50;
+      color: #2e7d32;
+    }
+    .clockquiz-opt.wrong{
+      background: #ffcdd2;
+      border-color: #e53935;
+      color: #c62828;
+    }
+    .clockquiz-result{
+      margin-top: 12px;
+      font-size: 2rem;
+      min-height: 2.5rem;
+      font-weight: 900;
+    }
+    .clockquiz-score{
+      margin-top: 6px;
+      font-size: 1.1rem;
+      color: #7b1fa2;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    /* ===== ステッカー帳 ===== */
+    #collection{
+      background: linear-gradient(135deg, #fffde7, #fff9c4);
+    }
+    .collection-title{
+      color: #6d4c41;
+      margin-bottom: 10px;
+    }
+    .collection-grid{
+      width: min(360px, 92vw);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .sticker{
+      background: rgba(255,255,255,.9);
+      border-radius: 18px;
+      box-shadow: var(--shadow2);
+      height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    .collection-empty{
+      width: min(360px, 92vw);
+      background: rgba(255,255,255,.85);
+      box-shadow: var(--shadow2);
+      border-radius: 18px;
+      padding: 14px;
+      text-align: center;
+      font-weight: 900;
+      color: #6d4c41;
+      margin-top: 10px;
+    }
+    .collection-stats{
+      margin-top: 12px;
+      font-weight: 900;
+      color: rgba(0,0,0,.6);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* 星エフェクト */
+    .star-burst {
+      position: fixed;
+      pointer-events: none;
+      z-index: 900;
+      font-size: 1.6rem;
+      animation: starPop 0.8s forwards;
+    }
+    @keyframes starPop {
+      0%   { transform: scale(0) rotate(0deg); opacity: 1; }
+      50%  { transform: scale(1.5) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0.5) rotate(360deg) translateY(-60px); opacity: 0; }
+    }
+
+    /* 目が疲れやすい端末向け：動きを減らす */
+    @media (prefers-reduced-motion: reduce){
+      * { animation: none !important; transition: none !important; }
+      .home-name{ animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-header">
+    <div class="header-left">
+      <div class="mascot" id="mascot" title="おとかちゃん">🕐</div>
+      <div class="speech" id="speech">ようこそ！</div>
+    </div>
+    <div class="header-right">
+      <button class="toggle" id="soundToggle" type="button" aria-label="おと">🔊</button>
+      <button class="toggle" id="voiceToggle" type="button" aria-label="こえ">🗣️</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <button class="back-btn" id="backBtn" onclick="goHome()" aria-label="ホームにもどる">🏠</button>
+
+  <!-- ホーム -->
+  <div class="screen active" id="home">
+    <div class="home-title">ようこそ！</div>
+    <div class="home-name">🕐 おとかちゃん 🕐</div>
+
+    <div class="menu">
+      <button class="menu-btn" onclick="goScreen('learn')">
+        <span class="icon">🔢</span>
+        <span class="label">すうじを<br>おぼえよう</span>
+      </button>
+
+      <button class="menu-btn" onclick="goScreen('quiz')">
+        <span class="icon">❓</span>
+        <span class="label">すうじ<br>クイズ</span>
+      </button>
+
+      <button class="menu-btn" onclick="goScreen('time')">
+        <span class="icon">🕐</span>
+        <span class="label">いま<br>なんじ？</span>
+      </button>
+
+      <button class="menu-btn" onclick="goScreen('clockquiz')">
+        <span class="icon">🎯</span>
+        <span class="label">とけい<br>クイズ</span>
+      </button>
+
+      <button class="menu-btn" onclick="goScreen('collection')">
+        <span class="icon">🎁</span>
+        <span class="label">ステッカー<br>ちょう</span>
+      </button>
+
+      <button class="menu-btn" onclick="goRandom()">
+        <span class="icon">🎲</span>
+        <span class="label">おまかせ<br>スタート</span>
+      </button>
+    </div>
+
+    <div class="hint">おとは右上で ON/OFF できるよ</div>
+  </div>
+
+  <!-- すうじをおぼえよう -->
+  <div class="screen" id="learn">
+    <div class="screen-title learn-title">すうじをタップしてね！</div>
+    <div class="clock-container">
+      <div class="clock-face" id="learnClock"></div>
+    </div>
+    <div class="learn-display">
+      <div class="learn-big-number" id="learnNumber"></div>
+      <div class="learn-label" id="learnLabel"></div>
+    </div>
+    <div class="hint">こえONなら、よみかたも きけるよ</div>
+  </div>
+
+  <!-- すうじクイズ -->
+  <div class="screen" id="quiz">
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="clock-container">
+      <div class="clock-face" id="quizClock"></div>
+    </div>
+    <div class="quiz-result" id="quizResult"></div>
+    <div class="quiz-score" id="quizScore"></div>
+    <div class="hint">せいかいが ふえると… いいことあるよ🎁</div>
+  </div>
+
+  <!-- いまなんじ -->
+  <div class="screen" id="time">
+    <div class="screen-title time-title">いまのじかんだよ！</div>
+    <div class="clock-container">
+      <div class="clock-face" id="timeClock">
+        <div class="clock-hand hand-hour" id="timeHourHand"></div>
+        <div class="clock-hand hand-minute" id="timeMinuteHand"></div>
+        <div class="clock-center"></div>
+      </div>
+    </div>
+    <div class="time-display" id="timeDisplay" title="タップすると こえで よむよ"></div>
+    <div class="time-label">↑ タップで こえで よむよ</div>
+  </div>
+
+  <!-- とけいクイズ -->
+  <div class="screen" id="clockquiz">
+    <div class="screen-title clockquiz-title" id="clockquizQ">このとけい、なんじ？</div>
+
+    <div class="mode-row">
+      <button class="mode-btn" id="modeHour" onclick="setClockMode('hour')">ちょうど</button>
+      <button class="mode-btn" id="modeHalf" onclick="setClockMode('half')">はん</button>
+      <button class="mode-btn" id="modeQuarter" onclick="setClockMode('quarter')">15ふん</button>
+    </div>
+
+    <div class="clock-container">
+      <div class="clock-face" id="clockquizClock">
+        <div class="clock-hand hand-hour" id="cqHourHand"></div>
+        <div class="clock-hand hand-minute" id="cqMinuteHand"></div>
+        <div class="clock-center"></div>
+      </div>
+    </div>
+
+    <div class="clockquiz-options" id="clockquizOpts"></div>
+    <div class="clockquiz-result" id="clockquizResult"></div>
+    <div class="clockquiz-score" id="clockquizScore"></div>
+  </div>
+
+  <!-- ステッカー帳 -->
+  <div class="screen" id="collection">
+    <div class="screen-title collection-title">ステッカーちょう 🎁</div>
+    <div class="collection-grid" id="stickerGrid"></div>
+    <div class="collection-empty" id="stickerEmpty" style="display:none;">
+      まだ ないよ。<br>クイズで あつめよう！
+    </div>
+    <div class="collection-stats" id="stickerStats"></div>
+    <div class="hint">5かい せいかいで ステッカーが ふえるよ</div>
+  </div>
+
+  <script>
+    /* =========================
+       設定・保存（localStorage）
+    ========================= */
+    const STORAGE_KEY = "otokaClockState_v1";
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const s = raw ? JSON.parse(raw) : {};
+        return {
+          soundOn: (s.soundOn ?? true),
+          voiceOn: (s.voiceOn ?? true),
+          clockMode: (s.clockMode ?? "hour"),
+          stickers: Array.isArray(s.stickers) ? s.stickers : [],
+          totalCorrect: Number.isFinite(s.totalCorrect) ? s.totalCorrect : 0,
+          bestStreak: Number.isFinite(s.bestStreak) ? s.bestStreak : 0
+        };
+      }catch(e){
+        return { soundOn:true, voiceOn:true, clockMode:"hour", stickers:[], totalCorrect:0, bestStreak:0 };
+      }
+    }
+
+    function saveState(){
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+    }
+
+    let state = loadState();
+
+    /* =========================
+       UIユーティリティ
+    ========================= */
+    const speechEl = document.getElementById("speech");
+    const toastEl = document.getElementById("toast");
+    const soundToggle = document.getElementById("soundToggle");
+    const voiceToggle = document.getElementById("voiceToggle");
+
+    function setSpeech(text){
+      speechEl.textContent = text;
+    }
+
+    let toastTimer = null;
+    function showToast(text){
+      toastEl.textContent = text;
+      toastEl.classList.add("show");
+      if(toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>toastEl.classList.remove("show"), 1200);
+    }
+
+    function applyToggles(){
+      soundToggle.classList.toggle("on", state.soundOn);
+      voiceToggle.classList.toggle("on", state.voiceOn);
+      soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
+      voiceToggle.textContent = state.voiceOn ? "🗣️" : "🤫";
+    }
+    applyToggles();
+
+    soundToggle.onclick = () => {
+      state.soundOn = !state.soundOn;
+      saveState();
+      applyToggles();
+      showToast(state.soundOn ? "おと ON" : "おと OFF");
+      soundTap();
+    };
+
+    voiceToggle.onclick = () => {
+      state.voiceOn = !state.voiceOn;
+      saveState();
+      applyToggles();
+      showToast(state.voiceOn ? "こえ ON" : "こえ OFF");
+      soundTap();
+      if(state.voiceOn) speak("こえを つけたよ");
+      else if("speechSynthesis" in window) speechSynthesis.cancel();
+    };
+
+    function vib(ms=18){
+      try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+    }
+
+    /* =========================
+       おと（WebAudio）
+    ========================= */
+    let audioCtx = null;
+
+    function playTone(freq, duration=0.08, type="sine"){
+      if(!state.soundOn) return;
+      try{
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if(!Ctx) return;
+        if(!audioCtx) audioCtx = new Ctx();
+        const t0 = audioCtx.currentTime;
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = type;
+        osc.frequency.value = freq;
+
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(t0);
+        osc.stop(t0 + duration + 0.02);
+      }catch(e){}
+    }
+
+    function soundTap(){ playTone(660, 0.04, "sine"); }
+    function soundCorrect(){
+      playTone(880, 0.08, "triangle");
+      setTimeout(()=>playTone(1320, 0.08, "triangle"), 90);
+    }
+    function soundWrong(){ playTone(220, 0.11, "sawtooth"); }
+
+    /* =========================
+       こえ（SpeechSynthesis）
+    ========================= */
+    let jaVoice = null;
+
+    function pickVoice(){
+      if(!("speechSynthesis" in window)) return;
+      const voices = speechSynthesis.getVoices();
+      jaVoice = voices.find(v => /^ja/i.test(v.lang)) || voices.find(v => (v.lang || "").includes("ja")) || null;
+    }
+    if("speechSynthesis" in window){
+      pickVoice();
+      speechSynthesis.onvoiceschanged = pickVoice;
+    }
+
+    function speak(text){
+      if(!state.voiceOn) return;
+      if(!("speechSynthesis" in window)) return;
+      try{
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        if(jaVoice) u.voice = jaVoice;
+        u.lang = "ja-JP";
+        u.rate = 0.95;
+        u.pitch = 1.2;
+        u.volume = 1;
+        speechSynthesis.speak(u);
+      }catch(e){}
+    }
+
+    const PRAISE = ["すごい！", "やったね！", "てんさい！", "いいかんじ！", "さいこう！"];
+    const TRY_AGAIN = ["もういっかい！", "だいじょうぶ！", "ゆっくりでOK！", "つぎ いこう！"];
+
+    function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+    /* =========================
+       ごほうび（ステッカー）
+    ========================= */
+    const STICKER_EVERY = 5;
+    const STICKER_POOL = ["🌈","🍓","🧸","🐰","🐱","🦄","🚀","🎈","🍪","🎀","🌟","💎","🐥","🍀"];
+
+    function awardSticker(){
+      const emoji = rand(STICKER_POOL);
+      state.stickers.push({ emoji, t: Date.now() });
+      saveState();
+      showToast("🎁 ステッカーゲット！ " + emoji);
+      setSpeech("ステッカー ゲット！");
+      speak("ステッカー ゲット！");
+      soundCorrect();
+      vib(25);
+    }
+
+    function markCorrect(streakNow){
+      state.totalCorrect += 1;
+      state.bestStreak = Math.max(state.bestStreak, streakNow);
+      if(state.totalCorrect % STICKER_EVERY === 0) awardSticker();
+      saveState();
+    }
+
+    function renderCollection(){
+      const grid = document.getElementById("stickerGrid");
+      const empty = document.getElementById("stickerEmpty");
+      const stats = document.getElementById("stickerStats");
+
+      grid.innerHTML = "";
+      if(state.stickers.length === 0){
+        empty.style.display = "block";
+      }else{
+        empty.style.display = "none";
+        const show = state.stickers.slice(-16); // 最新16個を表示
+        show.forEach(s=>{
+          const d = document.createElement("div");
+          d.className = "sticker";
+          d.textContent = s.emoji;
+          grid.appendChild(d);
+        });
+      }
+
+      stats.innerHTML =
+        `せいかい：${state.totalCorrect} かい<br>` +
+        `さいこう れんぞく：${state.bestStreak} かい`;
+    }
+
+    /* =========================
+       時計の数字配置
+    ========================= */
+    function buildClockNumbers(clockEl, onClick) {
+      const size = clockEl.getBoundingClientRect().width || 300;
+      const center = size / 2;
+      const r = size * 0.38; // 円周半径
+      const item = 46;
+      const offset = item / 2;
+
+      for (let i = 1; i <= 12; i++) {
+        const el = document.createElement("div");
+        el.className = "clock-number";
+        el.textContent = i;
+        el.dataset.num = i;
+
+        // 円周上に配置（12が上）
+        const angle = (i * 30 - 90) * (Math.PI / 180);
+        el.style.left = (center - offset + r * Math.cos(angle)) + "px";
+        el.style.top  = (center - offset + r * Math.sin(angle)) + "px";
+
+        if (onClick) el.onclick = () => onClick(i, el);
+        clockEl.appendChild(el);
+      }
+    }
+
+    /* =========================
+       画面切り替え
+    ========================= */
+    let timeInterval = null;
+
+    function goScreen(name){
+      if("speechSynthesis" in window) speechSynthesis.cancel();
+
+      document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+      document.getElementById(name).classList.add("active");
+      document.getElementById("backBtn").classList.toggle("show", name !== "home");
+
+      if(timeInterval){ clearInterval(timeInterval); timeInterval = null; }
+
+      // 画面ごとの開始処理
+      if(name === "home"){
+        setSpeech("どれで あそぶ？");
+      }
+      if(name === "learn"){
+        setSpeech("すうじを タップしてね！");
+      }
+      if(name === "quiz"){
+        startQuiz();
+      }
+      if(name === "time"){
+        startRealClock();
+      }
+      if(name === "clockquiz"){
+        startClockQuiz();
+      }
+      if(name === "collection"){
+        renderCollection();
+        setSpeech("ステッカー ちょうだよ！");
+        speak("ステッカーちょう だよ");
+      }
+    }
+
+    function goHome(){ goScreen("home"); }
+
+    function goRandom(){
+      const choices = ["learn","quiz","clockquiz"];
+      goScreen(rand(choices));
+    }
+
+    /* =========================
+       すうじをおぼえよう
+    ========================= */
+    const numberNames = {
+      1:"いち", 2:"に", 3:"さん", 4:"よん",
+      5:"ご", 6:"ろく", 7:"なな", 8:"はち",
+      9:"きゅう", 10:"じゅう", 11:"じゅういち", 12:"じゅうに"
+    };
+
+    const learnClock = document.getElementById("learnClock");
+    buildClockNumbers(learnClock, (num, el)=>{
+      soundTap();
+
+      learnClock.querySelectorAll(".clock-number").forEach(n=>n.classList.remove("highlight"));
+      el.classList.add("highlight");
+
+      const bigNum = document.getElementById("learnNumber");
+      const label = document.getElementById("learnLabel");
+      bigNum.textContent = num;
+      bigNum.style.animation = "none";
+      bigNum.offsetHeight; // reflow
+      bigNum.style.animation = "pop 0.3s";
+      label.textContent = `「${numberNames[num]}」`;
+
+      setSpeech(`${num}！「${numberNames[num]}」`);
+      speak(numberNames[num]);
+      vib(10);
+      spawnStars(el);
+    });
+
+    /* =========================
+       すうじクイズ
+    ========================= */
+    let quizAnswer = null;
+    let quizStreak = 0;
+    let quizLocked = false;
+
+    const quizClock = document.getElementById("quizClock");
+    buildClockNumbers(quizClock, (num, el)=>{
+      if(quizLocked) return;
+
+      const resultEl = document.getElementById("quizResult");
+
+      if(num === quizAnswer){
+        quizLocked = true;
+        quizStreak++;
+        el.classList.add("correct");
+
+        soundCorrect();
+        vib(18);
+        markCorrect(quizStreak);
+
+        const msg = rand(PRAISE);
+        resultEl.textContent = "⭐ せいかい！ ⭐";
+        setSpeech(msg);
+        speak(msg);
+
+        spawnStars(el);
+        document.getElementById("quizScore").textContent = "⭐".repeat(Math.min(quizStreak, 20));
+
+        setTimeout(()=>{
+          quizClock.querySelectorAll(".clock-number").forEach(n=>n.classList.remove("correct","wrong","highlight"));
+          nextQuizQuestion();
+        }, 1300);
+
+      }else{
+        el.classList.add("wrong");
+        soundWrong();
+        vib(12);
+
+        const msg = rand(TRY_AGAIN);
+        resultEl.textContent = "もういっかい！💪";
+        setSpeech(msg);
+        speak(msg);
+
+        setTimeout(()=>el.classList.remove("wrong"), 420);
+      }
+    });
+
+    function startQuiz(){
+      quizStreak = 0;
+      document.getElementById("quizScore").textContent = "";
+      nextQuizQuestion();
+    }
+
+    function nextQuizQuestion(){
+      quizLocked = false;
+      quizAnswer = Math.floor(Math.random()*12) + 1;
+
+      document.getElementById("quizQuestion").innerHTML =
+        `<span class="target-num">${quizAnswer}</span> はどこかな？`;
+
+      document.getElementById("quizResult").textContent = "";
+      quizClock.querySelectorAll(".clock-number").forEach(n=>n.classList.remove("correct","wrong","highlight"));
+
+      setSpeech(`${quizAnswer} は どこ？`);
+      speak(`${numberNames[quizAnswer]} は どこかな？`);
+    }
+
+    /* =========================
+       いまなんじ
+    ========================= */
+    const timeClock = document.getElementById("timeClock");
+    buildClockNumbers(timeClock, null);
+
+    function updateRealClock(){
+      const now = new Date();
+      const h = now.getHours() % 12;
+      const m = now.getMinutes();
+
+      const hourDeg = h * 30 + m * 0.5;
+      const minDeg = m * 6;
+
+      document.getElementById("timeHourHand").style.transform = `rotate(${hourDeg}deg)`;
+      document.getElementById("timeMinuteHand").style.transform = `rotate(${minDeg}deg)`;
+
+      const dispH = now.getHours();
+      const dispM = String(m).padStart(2, "0");
+      document.getElementById("timeDisplay").textContent = `${dispH}じ ${dispM}ふん`;
+
+      const currentH = h === 0 ? 12 : h;
+      timeClock.querySelectorAll(".clock-number").forEach(n=>{
+        n.classList.toggle("highlight", parseInt(n.dataset.num) === currentH);
+      });
+    }
+
+    function speakTime(){
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const mm = String(m).padStart(2, "0");
+      setSpeech(`いまは ${h}じ ${mm}ふん！`);
+      speak(`${h}じ ${m}ふん`);
+      soundTap();
+      vib(10);
+    }
+
+    document.getElementById("timeDisplay").onclick = speakTime;
+
+    function startRealClock(){
+      updateRealClock();
+      speakTime();
+      timeInterval = setInterval(updateRealClock, 1000);
+      setSpeech("いまの じかんだよ！");
+    }
+
+    /* =========================
+       とけいクイズ（ちょうど/はん/15ふん）
+    ========================= */
+    let cqAnswer = null; // {h,m}
+    let cqStreak = 0;
+    let cqLocked = false;
+
+    const cqClock = document.getElementById("clockquizClock");
+    buildClockNumbers(cqClock, null);
+
+    function setClockMode(mode){
+      state.clockMode = mode;
+      saveState();
+      updateModeButtons();
+      if(document.getElementById("clockquiz").classList.contains("active")){
+        nextClockQuiz();
+      }
+    }
+
+    function updateModeButtons(){
+      document.getElementById("modeHour").classList.toggle("on", state.clockMode === "hour");
+      document.getElementById("modeHalf").classList.toggle("on", state.clockMode === "half");
+      document.getElementById("modeQuarter").classList.toggle("on", state.clockMode === "quarter");
+    }
+    updateModeButtons();
+
+    function formatQuizTime(h, m){
+      if(m === 0) return `${h}じ`;
+      if(m === 30) return `${h}じはん`;
+      return `${h}じ${m}ふん`;
+    }
+
+    function randomTimeByMode(mode){
+      const h = Math.floor(Math.random()*12) + 1;
+      let m = 0;
+      if(mode === "hour"){
+        m = 0;
+      }else if(mode === "half"){
+        m = (Math.random() < 0.5) ? 0 : 30;
+      }else{ // quarter
+        const ms = [0,15,30,45];
+        m = ms[Math.floor(Math.random()*ms.length)];
+      }
+      return {h, m};
+    }
+
+    function startClockQuiz(){
+      cqStreak = 0;
+      document.getElementById("clockquizScore").textContent = "";
+      updateModeButtons();
+      nextClockQuiz();
+    }
+
+    function nextClockQuiz(){
+      cqLocked = false;
+
+      cqAnswer = randomTimeByMode(state.clockMode);
+
+      // 針をセット
+      const hourDeg = (cqAnswer.h % 12) * 30 + cqAnswer.m * 0.5;
+      const minDeg  = cqAnswer.m * 6;
+
+      document.getElementById("cqHourHand").style.transform = `rotate(${hourDeg}deg)`;
+      document.getElementById("cqMinuteHand").style.transform = `rotate(${minDeg}deg)`;
+
+      cqClock.querySelectorAll(".clock-number").forEach(n=>n.classList.remove("highlight"));
+
+      // 選択肢（正解 + 3ダミー）
+      const options = new Map();
+      const key = (t)=>`${t.h}-${t.m}`;
+
+      options.set(key(cqAnswer), cqAnswer);
+      while(options.size < 4){
+        const t = randomTimeByMode(state.clockMode);
+        options.set(key(t), t);
+      }
+
+      const shuffled = Array.from(options.values()).sort(()=>Math.random() - 0.5);
+
+      const optsEl = document.getElementById("clockquizOpts");
+      optsEl.innerHTML = "";
+      shuffled.forEach(t=>{
+        const btn = document.createElement("button");
+        btn.className = "clockquiz-opt";
+        btn.textContent = formatQuizTime(t.h, t.m);
+        btn.onclick = ()=>checkClockQuiz(t, btn);
+        optsEl.appendChild(btn);
+      });
+
+      document.getElementById("clockquizQ").textContent = "このとけい、なんじ？";
+      document.getElementById("clockquizResult").textContent = "";
+
+      setSpeech("このとけい、なんじ？");
+      speak("このとけい、なんじ？");
+    }
+
+    function checkClockQuiz(t, btn){
+      if(cqLocked) return;
+
+      const resultEl = document.getElementById("clockquizResult");
+      const correct = (t.h === cqAnswer.h && t.m === cqAnswer.m);
+
+      if(correct){
+        cqLocked = true;
+        cqStreak++;
+        btn.classList.add("correct");
+
+        soundCorrect();
+        vib(18);
+        markCorrect(cqStreak);
+
+        const msg = "⭐ すごい！せいかい！ ⭐";
+        resultEl.textContent = msg;
+        setSpeech(rand(PRAISE));
+        speak("せいかい！");
+
+        // 正解の「時」をハイライト
+        cqClock.querySelectorAll(".clock-number").forEach(n=>{
+          if(parseInt(n.dataset.num) === cqAnswer.h) n.classList.add("highlight");
+        });
+
+        spawnStarsAt(btn.getBoundingClientRect());
+        document.getElementById("clockquizScore").textContent = "⭐".repeat(Math.min(cqStreak, 20));
+        setTimeout(nextClockQuiz, 1800);
+
+      }else{
+        btn.classList.add("wrong");
+        soundWrong();
+        vib(12);
+
+        const msg = "おしい！もういっかい！";
+        resultEl.textContent = msg;
+        setSpeech(rand(TRY_AGAIN));
+        speak("おしい。もういっかい。");
+
+        setTimeout(()=>btn.classList.remove("wrong"), 520);
+      }
+    }
+
+    /* =========================
+       星エフェクト
+    ========================= */
+    function spawnStars(el){
+      const rect = el.getBoundingClientRect();
+      spawnStarsAt(rect);
+    }
+
+    function spawnStarsAt(rect){
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top + rect.height/2;
+      const stars = ["⭐","🌟","✨","💫"];
+      for(let i=0;i<6;i++){
+        const star = document.createElement("div");
+        star.className = "star-burst";
+        star.textContent = stars[Math.floor(Math.random()*stars.length)];
+        star.style.left = (cx + (Math.random()-0.5)*110) + "px";
+        star.style.top  = (cy + (Math.random()-0.5)*110) + "px";
+        document.body.appendChild(star);
+        setTimeout(()=>star.remove(), 800);
+      }
+    }
+
+    // 初期メッセージ
+    setSpeech("どれで あそぶ？");
+  </script>
+</body>
+</html>
