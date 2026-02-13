@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>おとかちゃんの とけい</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 12px;
+      gap: 10px;
+    }
+    .screen.active { display: flex; }
+
+    /* ホーム */
+    #home {
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    }
+    .home-name {
+      font-size: 2.2rem;
+      color: #ff6b9d;
+      margin-bottom: 16px;
+      animation: bounce 1.5s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 320px;
+      width: 100%;
+    }
+    .menu-btn {
+      background: #fff;
+      border: none;
+      border-radius: 22px;
+      padding: 20px;
+      cursor: pointer;
+      box-shadow: 0 5px 18px rgba(0,0,0,0.1);
+      transition: transform 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #555;
+    }
+    .menu-btn:active { transform: scale(0.95); }
+    .menu-btn .icon { font-size: 2.4rem; }
+
+    /* 戻るボタン */
+    .back-btn {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: rgba(255,255,255,0.92);
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      display: none;
+    }
+    .back-btn.show { display: block; }
+
+    /* 時計 */
+    .clock-wrap {
+      position: relative;
+      width: min(85vw, 85vh, 380px);
+      height: min(85vw, 85vh, 380px);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    /* 表示エリア */
+    .display-area {
+      text-align: center;
+      min-height: 90px;
+    }
+
+    .big-number {
+      font-size: 4.5rem;
+      font-weight: 800;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .number-name {
+      font-size: 1.4rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    /* じゆうモード */
+    #free { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+    #free .big-number { color: #2e7d32; }
+
+    /* クイズモード */
+    #quiz { background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
+    #quiz .big-number { color: #1565c0; }
+
+    .quiz-prompt {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1565c0;
+      min-height: 2em;
+    }
+    .quiz-prompt .target {
+      font-size: 2.2rem;
+      color: #e44d7b;
+    }
+
+    .quiz-result {
+      font-size: 2rem;
+      min-height: 2.4rem;
+      margin-top: 2px;
+    }
+
+    .quiz-stars {
+      font-size: 1.1rem;
+      color: #1565c0;
+      min-height: 1.3rem;
+    }
+
+    /* 星エフェクト */
+    .star {
+      position: fixed;
+      pointer-events: none;
+      z-index: 300;
+      font-size: 1.6rem;
+      animation: starPop 0.8s forwards;
+    }
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(0); opacity: 1; }
+      50% { transform: scale(1.6) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0.4) rotate(360deg) translateY(-70px); opacity: 0; }
+    }
+
+    /* ガイド矢印 */
+    .guide {
+      position: absolute;
+      top: 50%;
+      right: -14px;
+      transform: translateY(-50%);
+      font-size: 2rem;
+      animation: guideAnim 1.2s infinite;
+      pointer-events: none;
+    }
+    @keyframes guideAnim {
+      0%, 100% { opacity: 0.3; transform: translateY(-50%) translateX(0); }
+      50% { opacity: 1; transform: translateY(-50%) translateX(-8px); }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="back-btn" id="backBtn" onclick="goHome()">🏠</button>
+
+  <!-- ホーム -->
+  <div class="screen active" id="home">
+    <div class="home-name">🕐 おとかちゃんの とけい 🕐</div>
+    <div class="menu">
+      <button class="menu-btn" onclick="goScreen('free')">
+        <span class="icon">👆</span>
+        はりを うごかして あそぼう！
+      </button>
+      <button class="menu-btn" onclick="goScreen('quiz')">
+        <span class="icon">🎯</span>
+        はりを あわせて クイズ！
+      </button>
+    </div>
+  </div>
+
+  <!-- じゆうモード -->
+  <div class="screen" id="free">
+    <div class="clock-wrap">
+      <canvas id="freeClock"></canvas>
+      <div class="guide" id="freeGuide">👈</div>
+    </div>
+    <div class="display-area">
+      <div class="big-number" id="freeNum"></div>
+      <div class="number-name" id="freeName"></div>
+    </div>
+  </div>
+
+  <!-- クイズモード -->
+  <div class="screen" id="quiz">
+    <div class="quiz-prompt" id="quizPrompt"></div>
+    <div class="clock-wrap">
+      <canvas id="quizClock"></canvas>
+    </div>
+    <div class="display-area">
+      <div class="quiz-result" id="quizResult"></div>
+      <div class="quiz-stars" id="quizStars"></div>
+    </div>
+  </div>
+
+  <script>
+    const NUM_NAMES = {
+      1:'いち', 2:'に', 3:'さん', 4:'よん', 5:'ご', 6:'ろく',
+      7:'なな', 8:'はち', 9:'きゅう', 10:'じゅう', 11:'じゅういち', 12:'じゅうに'
+    };
+
+    const COLORS = [
+      '#e53935','#d81b60','#8e24aa','#5e35b1','#3949ab','#1e88e5',
+      '#039be5','#00acc1','#00897b','#43a047','#7cb342','#f4511e'
+    ];
+
+    /* ===== 時計描画クラス ===== */
+    class Clock {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.hour = 12;       // 1〜12
+        this.angle = 0;       // ラジアン（12時=0）
+        this.dragging = false;
+        this.onChanged = null; // コールバック
+        this.snapToHour = false;
+        this.highlightNum = 0;
+
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+
+        // タッチ/マウスイベント
+        const getAngle = (e) => {
+          const rect = this.canvas.getBoundingClientRect();
+          const cx = rect.width / 2;
+          const cy = rect.height / 2;
+          let clientX, clientY;
+          if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+          } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+          }
+          const x = clientX - rect.left - cx;
+          const y = clientY - rect.top - cy;
+          return Math.atan2(x, -y); // 12時=0, 時計回り
+        };
+
+        const start = (e) => {
+          e.preventDefault();
+          this.dragging = true;
+          this.update(getAngle(e));
+        };
+        const move = (e) => {
+          if (!this.dragging) return;
+          e.preventDefault();
+          this.update(getAngle(e));
+        };
+        const end = () => {
+          if (!this.dragging) return;
+          this.dragging = false;
+          if (this.snapToHour) {
+            // 最も近い時間にスナップ
+            const snapped = Math.round(this.angle / (Math.PI / 6)) * (Math.PI / 6);
+            this.angle = snapped;
+            this.hour = this.angleToHour(this.angle);
+            this.draw();
+            if (this.onChanged) this.onChanged(this.hour);
+          }
+        };
+
+        this.canvas.addEventListener('mousedown', start);
+        this.canvas.addEventListener('mousemove', move);
+        this.canvas.addEventListener('mouseup', end);
+        this.canvas.addEventListener('mouseleave', end);
+        this.canvas.addEventListener('touchstart', start, { passive: false });
+        this.canvas.addEventListener('touchmove', move, { passive: false });
+        this.canvas.addEventListener('touchend', end);
+      }
+
+      resize() {
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.size = rect.width;
+        this.draw();
+      }
+
+      angleToHour(a) {
+        let h = Math.round(a / (Math.PI / 6));
+        h = ((h % 12) + 12) % 12;
+        return h === 0 ? 12 : h;
+      }
+
+      update(newAngle) {
+        this.angle = newAngle;
+        this.hour = this.angleToHour(newAngle);
+        this.draw();
+        if (this.onChanged) this.onChanged(this.hour);
+      }
+
+      setHour(h) {
+        this.hour = h;
+        this.angle = h * (Math.PI / 6);
+        this.draw();
+      }
+
+      draw() {
+        const ctx = this.ctx;
+        const s = this.size;
+        const cx = s / 2;
+        const cy = s / 2;
+        const r = s / 2 - 8;
+
+        ctx.clearRect(0, 0, s, s);
+
+        // 文字盤の影
+        ctx.beginPath();
+        ctx.arc(cx, cy + 3, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fill();
+
+        // 文字盤
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#f0e6ff';
+        ctx.stroke();
+
+        // 目盛り（小さい点）
+        for (let i = 0; i < 60; i++) {
+          const a = i * (Math.PI / 30) - Math.PI / 2;
+          const inner = i % 5 === 0 ? r - 18 : r - 10;
+          const dotR = i % 5 === 0 ? 0 : 1.5;
+          if (dotR > 0) {
+            ctx.beginPath();
+            ctx.arc(cx + inner * Math.cos(a), cy + inner * Math.sin(a), dotR, 0, Math.PI * 2);
+            ctx.fillStyle = '#ddd';
+            ctx.fill();
+          }
+        }
+
+        // 数字
+        const numR = r - 36;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        for (let i = 1; i <= 12; i++) {
+          const a = i * (Math.PI / 6) - Math.PI / 2;
+          const nx = cx + numR * Math.cos(a);
+          const ny = cy + numR * Math.sin(a);
+
+          const isActive = (i === this.hour);
+          const isHighlight = (i === this.highlightNum);
+
+          if (isActive || isHighlight) {
+            // ハイライト円
+            ctx.beginPath();
+            ctx.arc(nx, ny, 24, 0, Math.PI * 2);
+            ctx.fillStyle = isActive ? COLORS[i - 1] : '#ffeb3b';
+            ctx.fill();
+            // 白抜きの影
+            ctx.shadowColor = 'rgba(0,0,0,0.15)';
+            ctx.shadowBlur = 8;
+            ctx.font = `bold ${s * 0.075}px "Hiragino Kaku Gothic ProN", sans-serif`;
+            ctx.fillStyle = '#fff';
+            ctx.fillText(i, nx, ny + 1);
+            ctx.shadowBlur = 0;
+          } else {
+            ctx.font = `bold ${s * 0.07}px "Hiragino Kaku Gothic ProN", sans-serif`;
+            ctx.fillStyle = '#555';
+            ctx.fillText(i, nx, ny + 1);
+          }
+        }
+
+        // 短針（太くて掴みやすそうに見せる）
+        const handLen = r * 0.52;
+        const handAngle = this.angle - Math.PI / 2;  // canvas座標に変換
+        const hx = cx + handLen * Math.cos(handAngle);
+        const hy = cy + handLen * Math.sin(handAngle);
+
+        // 針の影
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + 2);
+        ctx.lineTo(hx, hy + 2);
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        ctx.stroke();
+
+        // 針本体
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(hx, hy);
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#e44d7b';
+        ctx.stroke();
+
+        // 針先の丸（掴みやすいターゲット）
+        ctx.beginPath();
+        ctx.arc(hx, hy, 18, 0, Math.PI * 2);
+        ctx.fillStyle = '#e44d7b';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(hx, hy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+
+        // 中心
+        ctx.beginPath();
+        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#e44d7b';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+      }
+    }
+
+    /* ===== 画面切り替え ===== */
+    let freeClock, quizClock;
+
+    function goScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+      document.getElementById('backBtn').classList.toggle('show', name !== 'home');
+
+      if (name === 'free') initFree();
+      if (name === 'quiz') initQuiz();
+    }
+
+    function goHome() { goScreen('home'); }
+
+    /* ===== じゆうモード ===== */
+    function initFree() {
+      if (!freeClock) {
+        freeClock = new Clock('freeClock');
+        freeClock.onChanged = (h) => {
+          document.getElementById('freeNum').textContent = h;
+          document.getElementById('freeNum').style.color = COLORS[h - 1];
+          document.getElementById('freeName').textContent = `「${NUM_NAMES[h]}」`;
+          // ガイドを消す
+          document.getElementById('freeGuide').style.display = 'none';
+        };
+      }
+      freeClock.setHour(12);
+      freeClock.resize();
+      document.getElementById('freeNum').textContent = '12';
+      document.getElementById('freeNum').style.color = COLORS[11];
+      document.getElementById('freeName').textContent = `「${NUM_NAMES[12]}」`;
+      document.getElementById('freeGuide').style.display = '';
+    }
+
+    /* ===== クイズモード ===== */
+    let quizTarget = 0;
+    let quizStreak = 0;
+    let quizLocked = false;
+
+    function initQuiz() {
+      if (!quizClock) {
+        quizClock = new Clock('quizClock');
+        quizClock.snapToHour = true;
+        quizClock.onChanged = checkQuiz;
+      }
+      quizStreak = 0;
+      document.getElementById('quizStars').textContent = '';
+      nextQuiz();
+    }
+
+    function nextQuiz() {
+      quizLocked = false;
+      quizTarget = Math.floor(Math.random() * 12) + 1;
+      quizClock.highlightNum = quizTarget;
+      // ランダムな位置からスタート
+      let start;
+      do { start = Math.floor(Math.random() * 12) + 1; } while (start === quizTarget);
+      quizClock.setHour(start);
+      quizClock.resize();
+
+      document.getElementById('quizPrompt').innerHTML =
+        `はりを <span class="target" style="color:${COLORS[quizTarget - 1]}">${quizTarget}</span> に あわせてね！`;
+      document.getElementById('quizResult').textContent = '';
+    }
+
+    function checkQuiz(h) {
+      if (quizLocked) return;
+      if (h === quizTarget) {
+        quizLocked = true;
+        quizStreak++;
+        document.getElementById('quizResult').textContent = '⭐ せいかい！すごい！ ⭐';
+        document.getElementById('quizStars').textContent = '⭐'.repeat(Math.min(quizStreak, 20));
+
+        // 星エフェクト
+        const rect = document.getElementById('quizClock').getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        for (let i = 0; i < 8; i++) {
+          const star = document.createElement('div');
+          star.className = 'star';
+          star.textContent = ['⭐','🌟','✨','💫'][Math.floor(Math.random() * 4)];
+          star.style.left = (cx + (Math.random() - 0.5) * 160) + 'px';
+          star.style.top = (cy + (Math.random() - 0.5) * 160) + 'px';
+          document.body.appendChild(star);
+          setTimeout(() => star.remove(), 800);
+        }
+
+        setTimeout(nextQuiz, 1800);
+      }
+    }
+  </script>
+</body>
+</html>
