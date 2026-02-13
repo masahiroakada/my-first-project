@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>おとかちゃんの とけいアプリ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 16px;
+    }
+    .screen.active { display: flex; }
+
+    /* ホーム */
+    #home {
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    }
+
+    .home-title {
+      font-size: 1.5rem;
+      color: #e44d7b;
+      margin-bottom: 4px;
+    }
+
+    .home-name {
+      font-size: 2.5rem;
+      color: #ff6b9d;
+      margin-bottom: 24px;
+      animation: bounce 1.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      max-width: 340px;
+      width: 100%;
+    }
+
+    .menu-btn {
+      background: #fff;
+      border: none;
+      border-radius: 22px;
+      padding: 20px 10px;
+      cursor: pointer;
+      box-shadow: 0 5px 18px rgba(0,0,0,0.1);
+      transition: transform 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .menu-btn:active { transform: scale(0.92); }
+    .menu-btn .icon { font-size: 2.8rem; }
+    .menu-btn .label { color: #555; font-weight: 600; font-size: 0.95rem; }
+
+    /* 戻るボタン */
+    .back-btn {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 100;
+      background: rgba(255,255,255,0.9);
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 1.4rem;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      display: none;
+    }
+    .back-btn.show { display: block; }
+
+    /* 時計共通 */
+    .clock-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: 0 auto;
+    }
+
+    .clock-face {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.12);
+      position: relative;
+      border: 5px solid #f0e6ff;
+    }
+
+    .clock-number {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #444;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s, color 0.2s;
+    }
+    .clock-number:active { transform: scale(1.2); }
+    .clock-number.highlight {
+      background: #ff6b9d;
+      color: #fff;
+      transform: scale(1.3);
+      box-shadow: 0 4px 16px rgba(255,107,157,0.4);
+    }
+    .clock-number.correct {
+      background: #2ed573;
+      color: #fff;
+      transform: scale(1.3);
+      animation: pop 0.4s;
+    }
+    .clock-number.wrong {
+      background: #ff6b6b;
+      color: #fff;
+      animation: shake 0.4s;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1.3); }
+      50% { transform: scale(1.6); }
+      100% { transform: scale(1.3); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .clock-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: #e44d7b;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    .clock-hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      border-radius: 4px;
+    }
+
+    .hand-hour {
+      width: 6px;
+      height: 70px;
+      background: #e44d7b;
+      margin-left: -3px;
+      z-index: 5;
+    }
+
+    .hand-minute {
+      width: 4px;
+      height: 100px;
+      background: #7c5cbf;
+      margin-left: -2px;
+      z-index: 6;
+    }
+
+    /* ===== すうじをおぼえよう ===== */
+    #learn {
+      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    }
+
+    .learn-title {
+      font-size: 1.3rem;
+      color: #4caf50;
+      margin-bottom: 16px;
+    }
+
+    .learn-display {
+      margin-top: 20px;
+      text-align: center;
+      min-height: 80px;
+    }
+
+    .learn-big-number {
+      font-size: 4rem;
+      font-weight: 700;
+      color: #ff6b9d;
+      animation: pop 0.3s;
+    }
+
+    .learn-label {
+      font-size: 1.1rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    /* ===== すうじクイズ ===== */
+    #quiz {
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    }
+
+    .quiz-question {
+      font-size: 1.6rem;
+      color: #1976d2;
+      margin-bottom: 16px;
+      font-weight: 700;
+      min-height: 2em;
+    }
+
+    .quiz-question .target-num {
+      font-size: 2.2rem;
+      color: #e44d7b;
+    }
+
+    .quiz-result {
+      margin-top: 16px;
+      font-size: 2rem;
+      min-height: 2.5rem;
+    }
+
+    .quiz-score {
+      margin-top: 8px;
+      font-size: 1.1rem;
+      color: #1976d2;
+    }
+
+    /* ===== いまなんじ ===== */
+    #time {
+      background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    }
+
+    .time-title {
+      font-size: 1.3rem;
+      color: #e65100;
+      margin-bottom: 16px;
+    }
+
+    .time-display {
+      margin-top: 20px;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #e65100;
+    }
+
+    .time-label {
+      margin-top: 4px;
+      font-size: 1rem;
+      color: #999;
+    }
+
+    /* ===== とけいクイズ ===== */
+    #clockquiz {
+      background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    }
+
+    .clockquiz-question {
+      font-size: 1.4rem;
+      color: #7b1fa2;
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+
+    .clockquiz-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+      max-width: 300px;
+      width: 100%;
+    }
+
+    .clockquiz-opt {
+      background: #fff;
+      border: 3px solid #e1bee7;
+      border-radius: 18px;
+      padding: 16px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #7b1fa2;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .clockquiz-opt:active { transform: scale(0.93); }
+    .clockquiz-opt.correct {
+      background: #c8e6c9;
+      border-color: #4caf50;
+      color: #2e7d32;
+    }
+    .clockquiz-opt.wrong {
+      background: #ffcdd2;
+      border-color: #e53935;
+      color: #c62828;
+    }
+
+    .clockquiz-result {
+      margin-top: 14px;
+      font-size: 2rem;
+      min-height: 2.5rem;
+    }
+
+    .clockquiz-score {
+      margin-top: 6px;
+      font-size: 1.1rem;
+      color: #7b1fa2;
+    }
+
+    /* 星エフェクト */
+    .star-burst {
+      position: fixed;
+      pointer-events: none;
+      z-index: 300;
+      font-size: 1.5rem;
+      animation: starPop 0.8s forwards;
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(0deg); opacity: 1; }
+      50% { transform: scale(1.5) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0.5) rotate(360deg) translateY(-60px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="back-btn" id="backBtn" onclick="goHome()">🏠</button>
+
+  <!-- ホーム -->
+  <div class="screen active" id="home">
+    <div class="home-title">ようこそ！</div>
+    <div class="home-name">🕐 おとかちゃん 🕐</div>
+    <div class="menu">
+      <button class="menu-btn" onclick="goScreen('learn')">
+        <span class="icon">🔢</span>
+        <span class="label">すうじを<br>おぼえよう</span>
+      </button>
+      <button class="menu-btn" onclick="goScreen('quiz')">
+        <span class="icon">❓</span>
+        <span class="label">すうじ<br>クイズ</span>
+      </button>
+      <button class="menu-btn" onclick="goScreen('time')">
+        <span class="icon">🕐</span>
+        <span class="label">いま<br>なんじ？</span>
+      </button>
+      <button class="menu-btn" onclick="goScreen('clockquiz')">
+        <span class="icon">🎯</span>
+        <span class="label">とけい<br>クイズ</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- すうじをおぼえよう -->
+  <div class="screen" id="learn">
+    <div class="learn-title">すうじをタップしてね！</div>
+    <div class="clock-container">
+      <div class="clock-face" id="learnClock"></div>
+    </div>
+    <div class="learn-display">
+      <div class="learn-big-number" id="learnNumber"></div>
+      <div class="learn-label" id="learnLabel"></div>
+    </div>
+  </div>
+
+  <!-- すうじクイズ -->
+  <div class="screen" id="quiz">
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="clock-container">
+      <div class="clock-face" id="quizClock"></div>
+    </div>
+    <div class="quiz-result" id="quizResult"></div>
+    <div class="quiz-score" id="quizScore"></div>
+  </div>
+
+  <!-- いまなんじ -->
+  <div class="screen" id="time">
+    <div class="time-title">いまのじかんだよ！</div>
+    <div class="clock-container">
+      <div class="clock-face" id="timeClock">
+        <div class="clock-hand hand-hour" id="timeHourHand"></div>
+        <div class="clock-hand hand-minute" id="timeMinuteHand"></div>
+        <div class="clock-center"></div>
+      </div>
+    </div>
+    <div class="time-display" id="timeDisplay"></div>
+    <div class="time-label">じかんは どんどん すすむよ！</div>
+  </div>
+
+  <!-- とけいクイズ -->
+  <div class="screen" id="clockquiz">
+    <div class="clockquiz-question" id="clockquizQ">このとけい、なんじ？</div>
+    <div class="clock-container">
+      <div class="clock-face" id="clockquizClock">
+        <div class="clock-hand hand-hour" id="cqHourHand"></div>
+        <div class="clock-hand hand-minute" id="cqMinuteHand"></div>
+        <div class="clock-center"></div>
+      </div>
+    </div>
+    <div class="clockquiz-options" id="clockquizOpts"></div>
+    <div class="clockquiz-result" id="clockquizResult"></div>
+    <div class="clockquiz-score" id="clockquizScore"></div>
+  </div>
+
+  <script>
+    /* ===== 時計の数字を配置 ===== */
+    function buildClockNumbers(clockEl, onClick) {
+      for (let i = 1; i <= 12; i++) {
+        const el = document.createElement('div');
+        el.className = 'clock-number';
+        el.textContent = i;
+        el.dataset.num = i;
+
+        // 円周上に配置（12が上）
+        const angle = (i * 30 - 90) * (Math.PI / 180);
+        const r = 115; // 半径
+        const cx = 150 - 22; // 中心 - 要素半径
+        const cy = 150 - 22;
+        el.style.left = (cx + r * Math.cos(angle)) + 'px';
+        el.style.top = (cy + r * Math.sin(angle)) + 'px';
+
+        if (onClick) el.onclick = () => onClick(i, el);
+        clockEl.appendChild(el);
+      }
+    }
+
+    /* ===== 画面切り替え ===== */
+    let timeInterval = null;
+
+    function goScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+      document.getElementById('backBtn').classList.toggle('show', name !== 'home');
+
+      if (timeInterval) { clearInterval(timeInterval); timeInterval = null; }
+
+      if (name === 'quiz') startQuiz();
+      if (name === 'time') startRealClock();
+      if (name === 'clockquiz') startClockQuiz();
+    }
+
+    function goHome() { goScreen('home'); }
+
+    /* ===== すうじをおぼえよう ===== */
+    const numberNames = {
+      1: 'いち', 2: 'に', 3: 'さん', 4: 'よん',
+      5: 'ご', 6: 'ろく', 7: 'なな', 8: 'はち',
+      9: 'きゅう', 10: 'じゅう', 11: 'じゅういち', 12: 'じゅうに'
+    };
+
+    const learnClock = document.getElementById('learnClock');
+    buildClockNumbers(learnClock, (num, el) => {
+      // ハイライトをリセット
+      learnClock.querySelectorAll('.clock-number').forEach(n => n.classList.remove('highlight'));
+      el.classList.add('highlight');
+
+      const bigNum = document.getElementById('learnNumber');
+      const label = document.getElementById('learnLabel');
+      bigNum.textContent = num;
+      bigNum.style.animation = 'none';
+      bigNum.offsetHeight; // reflow
+      bigNum.style.animation = 'pop 0.3s';
+      label.textContent = `「${numberNames[num]}」`;
+    });
+
+    /* ===== すうじクイズ ===== */
+    let quizAnswer = null;
+    let quizStreak = 0;
+    let quizLocked = false;
+
+    const quizClock = document.getElementById('quizClock');
+    buildClockNumbers(quizClock, (num, el) => {
+      if (quizLocked) return;
+      const resultEl = document.getElementById('quizResult');
+
+      if (num === quizAnswer) {
+        quizLocked = true;
+        quizStreak++;
+        el.classList.add('correct');
+        resultEl.textContent = '⭐ せいかい！ ⭐';
+        spawnStars(el);
+        document.getElementById('quizScore').textContent = '⭐'.repeat(Math.min(quizStreak, 20));
+        setTimeout(() => {
+          quizClock.querySelectorAll('.clock-number').forEach(n => {
+            n.classList.remove('correct', 'wrong');
+          });
+          nextQuizQuestion();
+        }, 1500);
+      } else {
+        el.classList.add('wrong');
+        resultEl.textContent = 'もういっかい！💪';
+        setTimeout(() => el.classList.remove('wrong'), 400);
+      }
+    });
+
+    function startQuiz() {
+      quizStreak = 0;
+      document.getElementById('quizScore').textContent = '';
+      nextQuizQuestion();
+    }
+
+    function nextQuizQuestion() {
+      quizLocked = false;
+      quizAnswer = Math.floor(Math.random() * 12) + 1;
+      document.getElementById('quizQuestion').innerHTML =
+        `<span class="target-num">${quizAnswer}</span> はどこかな？`;
+      document.getElementById('quizResult').textContent = '';
+      quizClock.querySelectorAll('.clock-number').forEach(n => {
+        n.classList.remove('correct', 'wrong', 'highlight');
+      });
+    }
+
+    /* ===== いまなんじ ===== */
+    const timeClock = document.getElementById('timeClock');
+    buildClockNumbers(timeClock, null);
+
+    function updateRealClock() {
+      const now = new Date();
+      const h = now.getHours() % 12;
+      const m = now.getMinutes();
+
+      const hourDeg = h * 30 + m * 0.5;
+      const minDeg = m * 6;
+
+      document.getElementById('timeHourHand').style.transform = `rotate(${hourDeg}deg)`;
+      document.getElementById('timeMinuteHand').style.transform = `rotate(${minDeg}deg)`;
+
+      const dispH = now.getHours();
+      const dispM = String(m).padStart(2, '0');
+      document.getElementById('timeDisplay').textContent = `${dispH}じ ${dispM}ふん`;
+
+      // 現在の時間の数字をハイライト
+      const currentH = h === 0 ? 12 : h;
+      timeClock.querySelectorAll('.clock-number').forEach(n => {
+        n.classList.toggle('highlight', parseInt(n.dataset.num) === currentH);
+      });
+    }
+
+    function startRealClock() {
+      updateRealClock();
+      timeInterval = setInterval(updateRealClock, 1000);
+    }
+
+    /* ===== とけいクイズ ===== */
+    let cqAnswer = null;
+    let cqStreak = 0;
+    let cqLocked = false;
+
+    const cqClock = document.getElementById('clockquizClock');
+    buildClockNumbers(cqClock, null);
+
+    function startClockQuiz() {
+      cqStreak = 0;
+      document.getElementById('clockquizScore').textContent = '';
+      nextClockQuiz();
+    }
+
+    function nextClockQuiz() {
+      cqLocked = false;
+      // ちょうどの時間だけ（3歳向け）
+      cqAnswer = Math.floor(Math.random() * 12) + 1;
+
+      // 時計の針をセット
+      const hourDeg = cqAnswer * 30;
+      document.getElementById('cqHourHand').style.transform = `rotate(${hourDeg}deg)`;
+      document.getElementById('cqMinuteHand').style.transform = `rotate(0deg)`;
+
+      // ハイライトをリセット
+      cqClock.querySelectorAll('.clock-number').forEach(n => {
+        n.classList.remove('highlight');
+      });
+
+      // 選択肢を生成（正解 + 3つのダミー）
+      const options = new Set([cqAnswer]);
+      while (options.size < 4) {
+        options.add(Math.floor(Math.random() * 12) + 1);
+      }
+      const shuffled = [...options].sort(() => Math.random() - 0.5);
+
+      const optsEl = document.getElementById('clockquizOpts');
+      optsEl.innerHTML = '';
+      shuffled.forEach(h => {
+        const btn = document.createElement('button');
+        btn.className = 'clockquiz-opt';
+        btn.textContent = `${h}じ`;
+        btn.onclick = () => checkClockQuiz(h, btn);
+        optsEl.appendChild(btn);
+      });
+
+      document.getElementById('clockquizQ').textContent = 'このとけい、なんじ？';
+      document.getElementById('clockquizResult').textContent = '';
+    }
+
+    function checkClockQuiz(h, btn) {
+      if (cqLocked) return;
+      const resultEl = document.getElementById('clockquizResult');
+
+      if (h === cqAnswer) {
+        cqLocked = true;
+        cqStreak++;
+        btn.classList.add('correct');
+        resultEl.textContent = '⭐ すごい！せいかい！ ⭐';
+        // 正解の数字をハイライト
+        cqClock.querySelectorAll('.clock-number').forEach(n => {
+          if (parseInt(n.dataset.num) === cqAnswer) n.classList.add('highlight');
+        });
+        spawnStarsAt(btn.getBoundingClientRect());
+        document.getElementById('clockquizScore').textContent = '⭐'.repeat(Math.min(cqStreak, 20));
+        setTimeout(nextClockQuiz, 2000);
+      } else {
+        btn.classList.add('wrong');
+        resultEl.textContent = 'おしい！もういっかい！';
+        setTimeout(() => btn.classList.remove('wrong'), 500);
+      }
+    }
+
+    /* ===== 星エフェクト ===== */
+    function spawnStars(el) {
+      const rect = el.getBoundingClientRect();
+      spawnStarsAt(rect);
+    }
+
+    function spawnStarsAt(rect) {
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const stars = ['⭐', '🌟', '✨', '💫'];
+      for (let i = 0; i < 6; i++) {
+        const star = document.createElement('div');
+        star.className = 'star-burst';
+        star.textContent = stars[Math.floor(Math.random() * stars.length)];
+        star.style.left = (cx + (Math.random() - 0.5) * 100) + 'px';
+        star.style.top = (cy + (Math.random() - 0.5) * 100) + 'px';
+        document.body.appendChild(star);
+        setTimeout(() => star.remove(), 800);
+      }
+    }
+  </script>
+</body>
+</html>
