@@ -1,1 +1,1347 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>おとかちゃんの とけいアプリ</title>
+  <style>
+    :root{
+      --pink:#ff6b9d;
+      --pink2:#e44d7b;
+      --purple:#7c5cbf;
+      --blue:#1976d2;
+      --green:#2ed573;
+      --orange:#e65100;
+
+      --shadow: 0 8px 30px rgba(0,0,0,.12);
+      --shadow2: 0 3px 14px rgba(0,0,0,.12);
+      --radius: 22px;
+    }
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+
+    body{
+      font-family: "Hiragino Kaku Gothic ProN", system-ui, -apple-system, sans-serif;
+      min-height:100vh;
+      min-height:100dvh;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    /* ===== Top bar ===== */
+    .topbar{
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:500;
+      padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+      display:flex;
+      align-items:flex-end;
+      gap:10px;
+      background: rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+
+    .mascot{
+      width:44px;
+      height:44px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow: var(--shadow2);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.6rem;
+      flex:0 0 auto;
+    }
+
+    .speech{
+      flex:1;
+      min-width:0;
+      background:#fff;
+      box-shadow: var(--shadow2);
+      border-radius: 18px;
+      padding: 10px 12px;
+      font-weight: 800;
+      color:#444;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .toggle{
+      width:44px;
+      height:44px;
+      border:none;
+      border-radius: 14px;
+      background:#fff;
+      box-shadow: var(--shadow2);
+      font-size:1.25rem;
+      cursor:pointer;
+      transition: transform .12s;
+      flex:0 0 auto;
+    }
+    .toggle:active{ transform: scale(.94); }
+    .toggle.off{ opacity:.72; }
+
+    /* ===== Back/Home button ===== */
+    .back-btn{
+      position: fixed;
+      top: calc(74px + env(safe-area-inset-top));
+      left: 14px;
+      z-index: 600;
+      background: rgba(255,255,255,.95);
+      border: none;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: var(--shadow2);
+      display:none;
+    }
+    .back-btn.show{ display:block; }
+    .back-btn:active{ transform: scale(.94); }
+
+    /* ===== Screens ===== */
+    .screen{
+      display:none;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding:
+        calc(86px + env(safe-area-inset-top))
+        16px
+        calc(24px + env(safe-area-inset-bottom));
+      text-align:center;
+    }
+    .screen.active{
+      display:flex;
+      animation: fadeIn .22s ease;
+    }
+    @keyframes fadeIn{
+      from{ opacity:0; transform: translateY(8px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    /* ===== Home ===== */
+    #home{ background: linear-gradient(135deg, #ffecd2, #fcb69f); }
+    .home-title{
+      font-size:1.4rem;
+      font-weight:900;
+      color: var(--pink2);
+      text-shadow: 0 1px 0 rgba(255,255,255,.5);
+      margin-bottom:4px;
+    }
+    .home-name{
+      font-size:2.4rem;
+      font-weight: 950;
+      color: var(--pink);
+      margin-bottom: 18px;
+      animation: bounce 1.5s infinite;
+    }
+    @keyframes bounce{
+      0%,100%{ transform: translateY(0); }
+      50%{ transform: translateY(-10px); }
+    }
+
+    .menu{
+      width: min(380px, 92vw);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .menu-btn{
+      background:#fff;
+      border:none;
+      border-radius: var(--radius);
+      padding: 18px 10px;
+      box-shadow: var(--shadow);
+      cursor:pointer;
+      transition: transform .15s;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 6px;
+      font-weight:900;
+      color:#555;
+    }
+    .menu-btn:active{ transform: scale(.93); }
+    .menu-btn .icon{ font-size: 2.6rem; }
+    .menu-btn .label{ font-size: .95rem; line-height: 1.05rem; }
+
+    .hint{
+      margin-top: 14px;
+      font-size: .95rem;
+      font-weight: 800;
+      color: rgba(0,0,0,.55);
+    }
+
+    /* ===== Common titles ===== */
+    .screen-title{
+      font-size: 1.25rem;
+      font-weight: 950;
+      margin-bottom: 12px;
+    }
+
+    /* ===== Clock ===== */
+    .clock{
+      width: min(320px, 86vw);
+      height: min(320px, 86vw);
+      border-radius: 50%;
+      background:#fff;
+      box-shadow: var(--shadow);
+      border: 6px solid #f0e6ff;
+      position: relative;
+      margin: 0 auto;
+    }
+    .numbers{
+      position:absolute;
+      inset:0;
+    }
+    .clock-number{
+      position:absolute;
+      width:46px;
+      height:46px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 1.35rem;
+      font-weight: 950;
+      color:#444;
+      cursor:pointer;
+      transition: transform .18s, background .18s, color .18s;
+    }
+    .clock-number:active{ transform: scale(1.18); }
+    .clock-number.highlight{
+      background: var(--pink);
+      color:#fff;
+      transform: scale(1.25);
+      box-shadow: 0 4px 16px rgba(255,107,157,.35);
+    }
+    .clock-number.correct{
+      background: var(--green);
+      color:#fff;
+      transform: scale(1.25);
+      animation: pop .38s;
+    }
+    .clock-number.wrong{
+      background:#ff6b6b;
+      color:#fff;
+      animation: shake .38s;
+    }
+    @keyframes pop{
+      0%{ transform: scale(1.25); }
+      50%{ transform: scale(1.55); }
+      100%{ transform: scale(1.25); }
+    }
+    @keyframes shake{
+      0%,100%{ transform: translateX(0); }
+      25%{ transform: translateX(-6px); }
+      75%{ transform: translateX(6px); }
+    }
+
+    .center-dot{
+      position:absolute;
+      top:50%; left:50%;
+      width:12px; height:12px;
+      border-radius:50%;
+      background: var(--pink2);
+      transform: translate(-50%, -50%);
+      z-index: 20;
+    }
+
+    .hand{
+      position:absolute;
+      left:50%;
+      bottom:50%;
+      transform-origin: bottom center;
+      border-radius: 8px;
+      pointer-events:none; /* 触るのは handle */
+    }
+    .hand.hour{
+      width:7px;
+      height: 30%;
+      background: var(--pink2);
+      z-index: 12;
+    }
+    .hand.minute{
+      width:5px;
+      height: 42%;
+      background: var(--purple);
+      z-index: 13;
+    }
+
+    /* ===== Learn ===== */
+    #learn{ background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+    .learn-title{ color:#2e7d32; }
+    .learn-display{
+      margin-top: 16px;
+      min-height: 82px;
+      text-align:center;
+    }
+    .learn-big{
+      font-size: 4rem;
+      font-weight: 950;
+      color: var(--pink);
+      animation: pop .3s;
+      line-height: 1;
+    }
+    .learn-label{
+      margin-top: 6px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: rgba(0,0,0,.55);
+    }
+
+    /* ===== Number Quiz ===== */
+    #quiz{ background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
+    .quiz-q{
+      font-size: 1.55rem;
+      font-weight: 950;
+      color: var(--blue);
+      margin-bottom: 10px;
+      min-height: 2.2em;
+    }
+    .quiz-q .target{
+      font-size: 2.2rem;
+      color: var(--pink2);
+      padding: 0 6px;
+    }
+    .result{
+      margin-top: 12px;
+      min-height: 2.4rem;
+      font-size: 2rem;
+      font-weight: 950;
+    }
+    .score{
+      margin-top: 6px;
+      font-weight: 950;
+      color: var(--blue);
+    }
+
+    /* ===== Time ===== */
+    #time{ background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+    .time-title{ color: var(--orange); }
+    .time-digital{
+      margin-top: 14px;
+      font-size: 2.4rem;
+      font-weight: 950;
+      color: var(--orange);
+      cursor: pointer;
+    }
+    .time-sub{
+      margin-top: 4px;
+      font-size: 1rem;
+      font-weight: 900;
+      color: rgba(0,0,0,.55);
+    }
+
+    /* ===== Clock Quiz ===== */
+    #clockquiz{ background: linear-gradient(135deg, #f3e5f5, #e1bee7); }
+    .cq-title{ color: #7b1fa2; }
+    .pill-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin: 6px 0 10px;
+    }
+    .pill{
+      border:none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,.88);
+      box-shadow: var(--shadow2);
+      cursor:pointer;
+      font-weight: 950;
+      color: #7b1fa2;
+      transition: transform .12s;
+    }
+    .pill:active{ transform: scale(.95); }
+    .pill.on{
+      outline: 3px solid rgba(123,31,162,.22);
+      background:#fff;
+    }
+    .opts{
+      width: min(340px, 92vw);
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .opt{
+      background:#fff;
+      border: 3px solid #e1bee7;
+      border-radius: 18px;
+      padding: 16px;
+      font-size: 1.45rem;
+      font-weight: 950;
+      color: #7b1fa2;
+      cursor:pointer;
+      transition: transform .15s, border-color .15s;
+    }
+    .opt:active{ transform: scale(.93); }
+    .opt.correct{
+      background:#c8e6c9;
+      border-color:#4caf50;
+      color:#2e7d32;
+    }
+    .opt.wrong{
+      background:#ffcdd2;
+      border-color:#e53935;
+      color:#c62828;
+    }
+
+    /* ===== Hands Play ===== */
+    #hands{ background: linear-gradient(135deg, #e8f0ff, #d9f7ff); }
+    .hands-title{ color:#0b5394; }
+
+    .panel{
+      width: min(380px, 92vw);
+      background: rgba(255,255,255,.88);
+      box-shadow: var(--shadow2);
+      border-radius: 18px;
+      padding: 12px 12px;
+      margin-top: 10px;
+      font-weight: 950;
+      color: rgba(0,0,0,.68);
+      line-height: 1.35;
+    }
+
+    .legend{
+      margin-top: 8px;
+      font-size: .95rem;
+      font-weight: 900;
+      color: rgba(0,0,0,.55);
+    }
+    .dot-hour{
+      display:inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--pink2);
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    .dot-min{
+      display:inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--purple);
+      vertical-align: middle;
+      margin: 0 6px 0 14px;
+    }
+
+    .hand .handle{
+      position:absolute;
+      top: 0px;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.95);
+      border: 3px solid rgba(0,0,0,.08);
+      box-shadow: var(--shadow2);
+      pointer-events:auto;
+      touch-action: none; /* これが大事：ドラッグ時スクロールさせない */
+    }
+    .hand.hour .handle{ outline: 3px solid rgba(228,77,123,.18); }
+    .hand.minute .handle{ outline: 3px solid rgba(124,92,191,.18); }
+
+    .hands-digital{
+      margin-top: 12px;
+      font-size: 2.0rem;
+      font-weight: 950;
+      color:#0b5394;
+    }
+
+    .btn-row{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top: 10px;
+    }
+    .btn{
+      border:none;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background:#fff;
+      box-shadow: var(--shadow2);
+      cursor:pointer;
+      font-weight: 950;
+      color:#0b5394;
+      transition: transform .12s;
+    }
+    .btn:active{ transform: scale(.95); }
+
+    /* Star effect */
+    .star{
+      position: fixed;
+      pointer-events:none;
+      z-index: 900;
+      font-size: 1.6rem;
+      animation: starPop .8s forwards;
+    }
+    @keyframes starPop{
+      0%   { transform: scale(0) rotate(0deg); opacity: 1; }
+      50%  { transform: scale(1.5) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0.6) rotate(360deg) translateY(-60px); opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *{ animation:none !important; transition:none !important; }
+      .home-name{ animation:none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="mascot" id="mascot" title="おとかちゃん">🕐</div>
+    <div class="speech" id="speech">おとかちゃん、どれで あそぶ？</div>
+    <button class="toggle" id="voiceBtn" aria-label="こえ ON/OFF">🗣️</button>
+  </div>
+
+  <button class="back-btn" id="backBtn" onclick="goHome()" aria-label="ホームにもどる">🏠</button>
+
+  <!-- HOME -->
+  <section class="screen active" id="home">
+    <div class="home-title">おとかちゃんの</div>
+    <div class="home-name">🕐 とけいあそび 🕐</div>
+
+    <div class="menu">
+      <button class="menu-btn" onclick="goScreen('learn')">
+        <div class="icon">🔢</div>
+        <div class="label">すうじを<br>おぼえよう</div>
+      </button>
+      <button class="menu-btn" onclick="goScreen('quiz')">
+        <div class="icon">❓</div>
+        <div class="label">すうじ<br>クイズ</div>
+      </button>
+      <button class="menu-btn" onclick="goScreen('time')">
+        <div class="icon">🕐</div>
+        <div class="label">いま<br>なんじ？</div>
+      </button>
+      <button class="menu-btn" onclick="goScreen('clockquiz')">
+        <div class="icon">🎯</div>
+        <div class="label">とけい<br>クイズ</div>
+      </button>
+      <button class="menu-btn" onclick="goScreen('hands')">
+        <div class="icon">🖐️</div>
+        <div class="label">はりを<br>うごかす</div>
+      </button>
+      <button class="menu-btn" onclick="goRandom()">
+        <div class="icon">🎲</div>
+        <div class="label">おまかせ<br>スタート</div>
+      </button>
+    </div>
+
+    <div class="hint">右上の 🗣️ で こえ ON/OFF</div>
+  </section>
+
+  <!-- LEARN -->
+  <section class="screen" id="learn">
+    <div class="screen-title learn-title">すうじを タップしてね！</div>
+    <div class="clock" id="learnClock">
+      <div class="numbers" id="learnNums"></div>
+    </div>
+    <div class="learn-display">
+      <div class="learn-big" id="learnBig"></div>
+      <div class="learn-label" id="learnLabel"></div>
+    </div>
+    <div class="hint">おとかちゃんに おしえてあげよう</div>
+  </section>
+
+  <!-- NUMBER QUIZ -->
+  <section class="screen" id="quiz">
+    <div class="quiz-q" id="quizQ"></div>
+    <div class="clock" id="quizClock">
+      <div class="numbers" id="quizNums"></div>
+    </div>
+    <div class="result" id="quizResult"></div>
+    <div class="score" id="quizScore"></div>
+    <div class="hint">あてたら ほめるよ！</div>
+  </section>
+
+  <!-- TIME NOW -->
+  <section class="screen" id="time">
+    <div class="screen-title time-title">いまの じかんだよ！</div>
+    <div class="clock" id="timeClock">
+      <div class="numbers" id="timeNums"></div>
+      <div class="hand hour" id="timeHour"></div>
+      <div class="hand minute" id="timeMin"></div>
+      <div class="center-dot"></div>
+    </div>
+    <div class="time-digital" id="timeDigital" title="タップで よむよ"></div>
+    <div class="time-sub">↑ タップで おとかちゃんが よむよ</div>
+  </section>
+
+  <!-- CLOCK QUIZ -->
+  <section class="screen" id="clockquiz">
+    <div class="screen-title cq-title" id="cqTitle">このとけい、なんじ？</div>
+
+    <div class="pill-row">
+      <button class="pill" id="cqModeHour" onclick="setCQMode('hour')">ちょうど</button>
+      <button class="pill" id="cqModeHalf" onclick="setCQMode('half')">はん</button>
+      <button class="pill" id="cqModeQuarter" onclick="setCQMode('quarter')">15ふん</button>
+    </div>
+
+    <div class="clock" id="cqClock">
+      <div class="numbers" id="cqNums"></div>
+      <div class="hand hour" id="cqHour"></div>
+      <div class="hand minute" id="cqMin"></div>
+      <div class="center-dot"></div>
+    </div>
+
+    <div class="opts" id="cqOpts"></div>
+    <div class="result" id="cqResult"></div>
+    <div class="score" id="cqScore"></div>
+  </section>
+
+  <!-- HANDS PLAY -->
+  <section class="screen" id="hands">
+    <div class="screen-title hands-title">はりを うごかして あそぼう！</div>
+
+    <div class="pill-row">
+      <button class="pill" id="handsModeTask" onclick="setHandsMode('task')">おだい</button>
+      <button class="pill" id="handsModeFree" onclick="setHandsMode('free')">じゆう</button>
+    </div>
+
+    <div class="pill-row">
+      <button class="pill" id="handsDiffHour" onclick="setHandsDiff('hour')">ちょうど</button>
+      <button class="pill" id="handsDiffHalf" onclick="setHandsDiff('half')">はん</button>
+      <button class="pill" id="handsDiffQuarter" onclick="setHandsDiff('quarter')">15ふん</button>
+    </div>
+
+    <div class="panel" id="handsPanel"></div>
+
+    <div class="clock" id="handsClock">
+      <div class="numbers" id="handsNums"></div>
+
+      <div class="hand hour" id="handsHour">
+        <div class="handle" id="hourHandle" aria-label="じのはり"></div>
+      </div>
+
+      <div class="hand minute" id="handsMin">
+        <div class="handle" id="minHandle" aria-label="ふんのはり"></div>
+      </div>
+
+      <div class="center-dot"></div>
+    </div>
+
+    <div class="legend">
+      <span class="dot-hour"></span>じの はり
+      <span class="dot-min"></span>ふんの はり（むらさき）
+    </div>
+
+    <div class="hands-digital" id="handsDigital"></div>
+
+    <div class="btn-row" id="handsBtns">
+      <button class="btn" id="handsCheckBtn" onclick="handsCheck()">できた！</button>
+      <button class="btn" id="handsNewBtn" onclick="handsNewTarget()">おだい かえる</button>
+      <button class="btn" onclick="handsSpeak()">よむ</button>
+    </div>
+
+    <div class="hint">○を つまんで ぐるぐる うごかしてね</div>
+  </section>
+
+  <script>
+    /***********************
+     * こえ（SpeechSynthesis）
+     ***********************/
+    const speechEl = document.getElementById('speech');
+    const voiceBtn = document.getElementById('voiceBtn');
+
+    const STATE_KEY = 'otoka_clock_app_state_v2';
+    const defaultState = {
+      voiceOn: true,
+      cqMode: 'hour',
+      handsMode: 'task',
+      handsDiff: 'hour'
+    };
+    let state = loadState();
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STATE_KEY);
+        const s = raw ? JSON.parse(raw) : {};
+        return {
+          voiceOn: (s.voiceOn ?? defaultState.voiceOn),
+          cqMode: (s.cqMode ?? defaultState.cqMode),
+          handsMode: (s.handsMode ?? defaultState.handsMode),
+          handsDiff: (s.handsDiff ?? defaultState.handsDiff),
+        };
+      }catch(e){
+        return {...defaultState};
+      }
+    }
+    function saveState(){
+      try{ localStorage.setItem(STATE_KEY, JSON.stringify(state)); }catch(e){}
+    }
+
+    let jaVoice = null;
+    function pickVoice(){
+      if(!('speechSynthesis' in window)) return;
+      const voices = speechSynthesis.getVoices();
+      jaVoice =
+        voices.find(v => (v.lang||'').toLowerCase().startsWith('ja')) ||
+        voices.find(v => (v.lang||'').toLowerCase().includes('ja')) ||
+        null;
+    }
+    if('speechSynthesis' in window){
+      pickVoice();
+      speechSynthesis.onvoiceschanged = pickVoice;
+    }
+
+    function setSpeech(text){
+      speechEl.textContent = text;
+    }
+
+    function speak(text){
+      if(!state.voiceOn) return;
+      if(!('speechSynthesis' in window)) return;
+      try{
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        if(jaVoice) u.voice = jaVoice;
+        u.lang = 'ja-JP';
+        u.rate = 0.95;  // 少しゆっくり
+        u.pitch = 1.15; // 少し可愛め
+        u.volume = 1;
+        speechSynthesis.speak(u);
+      }catch(e){}
+    }
+
+    // 「おとかちゃん、〜」の形で言う
+    function otokaTalk(screenText, voiceText){
+      const st = `おとかちゃん、${screenText}`;
+      setSpeech(st);
+      speak(`おとかちゃん、${voiceText ?? screenText}`);
+    }
+
+    function applyVoiceBtn(){
+      voiceBtn.textContent = state.voiceOn ? '🗣️' : '🤫';
+      voiceBtn.classList.toggle('off', !state.voiceOn);
+    }
+    applyVoiceBtn();
+
+    voiceBtn.onclick = () => {
+      state.voiceOn = !state.voiceOn;
+      saveState();
+      applyVoiceBtn();
+      if(state.voiceOn){
+        otokaTalk('こえを つけたよ！', 'こえを つけたよ！');
+        popStarsAt(voiceBtn.getBoundingClientRect());
+      }else{
+        setSpeech('おとかちゃん、こえは おやすみ');
+        if('speechSynthesis' in window) speechSynthesis.cancel();
+      }
+    };
+
+    const PRAISE = ['すごい！', 'やったね！', 'てんさい！', 'いいかんじ！', 'さいこう！'];
+    const TRY_AGAIN = ['もういっかい！', 'だいじょうぶ！', 'ゆっくりでOK！', 'つぎ いこう！'];
+    function rand(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+    /***********************
+     * 画面切り替え
+     ***********************/
+    const backBtn = document.getElementById('backBtn');
+    let timeInterval = null;
+
+    function goScreen(id){
+      if('speechSynthesis' in window) speechSynthesis.cancel();
+
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      backBtn.classList.toggle('show', id !== 'home');
+
+      // タイマー停止
+      if(timeInterval){ clearInterval(timeInterval); timeInterval = null; }
+
+      // レイアウト（時計の数字配置）
+      requestAnimationFrame(layoutAllNumbers);
+
+      // 画面ごとの開始
+      if(id === 'home'){
+        otokaTalk('どれで あそぶ？');
+      }
+      if(id === 'learn'){
+        otokaTalk('すうじを タップしてね！');
+      }
+      if(id === 'quiz'){
+        startNumberQuiz();
+      }
+      if(id === 'time'){
+        startRealTime();
+      }
+      if(id === 'clockquiz'){
+        startClockQuiz();
+      }
+      if(id === 'hands'){
+        startHandsPlay();
+      }
+    }
+    function goHome(){ goScreen('home'); }
+
+    function goRandom(){
+      const choices = ['learn', 'quiz', 'clockquiz', 'hands'];
+      goScreen(choices[Math.floor(Math.random()*choices.length)]);
+    }
+
+    /***********************
+     * 時計の数字配置（各時計共通）
+     ***********************/
+    const NUMBER_SIZE = 46;
+
+    function buildNumbers(numsEl, onPick){
+      numsEl.innerHTML = '';
+      for(let i=1;i<=12;i++){
+        const d = document.createElement('div');
+        d.className = 'clock-number';
+        d.textContent = i;
+        d.dataset.num = String(i);
+        if(onPick){
+          d.onclick = () => onPick(i, d);
+        }else{
+          d.style.cursor = 'default';
+        }
+        numsEl.appendChild(d);
+      }
+    }
+
+    function layoutNumbers(numsEl){
+      const clock = numsEl.parentElement;
+      const size = clock.clientWidth;
+      if(!size) return;
+
+      const center = size/2;
+      const r = size * 0.38;
+      const offset = NUMBER_SIZE/2;
+
+      numsEl.querySelectorAll('.clock-number').forEach(el=>{
+        const i = parseInt(el.dataset.num, 10);
+        const angle = (i*30 - 90) * Math.PI / 180;
+        const x = center - offset + r * Math.cos(angle);
+        const y = center - offset + r * Math.sin(angle);
+        el.style.left = x + 'px';
+        el.style.top  = y + 'px';
+      });
+    }
+
+    function layoutAllNumbers(){
+      [
+        document.getElementById('learnNums'),
+        document.getElementById('quizNums'),
+        document.getElementById('timeNums'),
+        document.getElementById('cqNums'),
+        document.getElementById('handsNums')
+      ].forEach(layoutNumbers);
+    }
+
+    window.addEventListener('resize', () => requestAnimationFrame(layoutAllNumbers));
+
+    /***********************
+     * 星エフェクト
+     ***********************/
+    function popStarsAt(rect){
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top + rect.height/2;
+      const stars = ['⭐','🌟','✨','💫'];
+      for(let i=0;i<6;i++){
+        const s = document.createElement('div');
+        s.className = 'star';
+        s.textContent = stars[Math.floor(Math.random()*stars.length)];
+        s.style.left = (cx + (Math.random()-0.5)*110) + 'px';
+        s.style.top  = (cy + (Math.random()-0.5)*110) + 'px';
+        document.body.appendChild(s);
+        setTimeout(()=>s.remove(), 820);
+      }
+    }
+
+    /***********************
+     * 学習：すうじ
+     ***********************/
+    const numberNames = {
+      1:'いち', 2:'に', 3:'さん', 4:'よん',
+      5:'ご', 6:'ろく', 7:'なな', 8:'はち',
+      9:'きゅう', 10:'じゅう', 11:'じゅういち', 12:'じゅうに'
+    };
+
+    buildNumbers(document.getElementById('learnNums'), (num, el) => {
+      // highlight
+      document.querySelectorAll('#learnNums .clock-number').forEach(n => n.classList.remove('highlight'));
+      el.classList.add('highlight');
+
+      const big = document.getElementById('learnBig');
+      const label = document.getElementById('learnLabel');
+      big.textContent = String(num);
+      big.style.animation = 'none';
+      big.offsetHeight;
+      big.style.animation = 'pop .3s';
+
+      label.textContent = `「${numberNames[num]}」`;
+
+      otokaTalk(`${num}だよ！`, `${numberNames[num]}！`);
+      popStarsAt(el.getBoundingClientRect());
+    });
+
+    buildNumbers(document.getElementById('timeNums'), null);
+    buildNumbers(document.getElementById('cqNums'), null);
+    buildNumbers(document.getElementById('handsNums'), null);
+
+    /***********************
+     * すうじクイズ
+     ***********************/
+    let nqAnswer = 1;
+    let nqLocked = false;
+    let nqStreak = 0;
+
+    buildNumbers(document.getElementById('quizNums'), (num, el) => {
+      if(nqLocked) return;
+
+      if(num === nqAnswer){
+        nqLocked = true;
+        nqStreak++;
+
+        el.classList.add('correct');
+        document.getElementById('quizResult').textContent = '⭐ せいかい！ ⭐';
+        document.getElementById('quizScore').textContent = '⭐'.repeat(Math.min(nqStreak, 20));
+
+        otokaTalk(`${rand(PRAISE)} せいかい！`, `${rand(PRAISE)} せいかい！`);
+        popStarsAt(el.getBoundingClientRect());
+
+        setTimeout(()=>{
+          document.querySelectorAll('#quizNums .clock-number').forEach(n => n.classList.remove('correct','wrong','highlight'));
+          nextNumberQuestion();
+        }, 1300);
+
+      }else{
+        el.classList.add('wrong');
+        document.getElementById('quizResult').textContent = 'もういっかい！💪';
+        otokaTalk(`おしい！ ${rand(TRY_AGAIN)}`, `おしい！ ${rand(TRY_AGAIN)}`);
+
+        setTimeout(()=>el.classList.remove('wrong'), 420);
+      }
+    });
+
+    function startNumberQuiz(){
+      nqStreak = 0;
+      document.getElementById('quizScore').textContent = '';
+      nextNumberQuestion();
+    }
+
+    function nextNumberQuestion(){
+      nqLocked = false;
+      nqAnswer = Math.floor(Math.random()*12) + 1;
+
+      document.getElementById('quizQ').innerHTML =
+        `<span class="target">${nqAnswer}</span> はどこかな？`;
+
+      document.getElementById('quizResult').textContent = '';
+
+      otokaTalk(`${nqAnswer} は どこかな？`, `${numberNames[nqAnswer]} は どこかな？`);
+    }
+
+    /***********************
+     * いまなんじ
+     ***********************/
+    function setHandsRotation(handEl, deg){
+      handEl.style.transform = `translateX(-50%) rotate(${deg}deg)`;
+    }
+
+    function startRealTime(){
+      updateRealTime();
+      timeInterval = setInterval(updateRealTime, 1000);
+      otokaTalk('いまの じかんを みてみよう！', 'いまの じかんを みてみよう！');
+    }
+
+    function updateRealTime(){
+      const now = new Date();
+      const h24 = now.getHours();
+      const h = h24 % 12;
+      const m = now.getMinutes();
+
+      const hourDeg = h * 30 + m * 0.5;
+      const minDeg = m * 6;
+
+      setHandsRotation(document.getElementById('timeHour'), hourDeg);
+      setHandsRotation(document.getElementById('timeMin'), minDeg);
+
+      const mm = String(m).padStart(2, '0');
+      document.getElementById('timeDigital').textContent = `${h24}じ ${mm}ふん`;
+
+      const curH = (h === 0) ? 12 : h;
+      document.querySelectorAll('#timeNums .clock-number').forEach(n=>{
+        n.classList.toggle('highlight', parseInt(n.dataset.num,10) === curH);
+      });
+    }
+
+    document.getElementById('timeDigital').onclick = () => {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const mm = String(m).padStart(2, '0');
+      otokaTalk(`いまは ${h}じ ${mm}ふんだよ`, `いまは ${h}じ ${m}ふんだよ`);
+      popStarsAt(document.getElementById('timeDigital').getBoundingClientRect());
+    };
+
+    /***********************
+     * とけいクイズ（選択）
+     ***********************/
+    function formatTimeJP(h, m){
+      if(m === 0) return `${h}じ`;
+      if(m === 30) return `${h}じはん`;
+      if(m === 15) return `${h}じ15ふん`;
+      if(m === 45) return `${h}じ45ふん`;
+      return `${h}じ${m}ふん`;
+    }
+
+    function randomTimeByMode(mode){
+      const h = Math.floor(Math.random()*12) + 1;
+      let m = 0;
+      if(mode === 'hour') m = 0;
+      else if(mode === 'half') m = (Math.random()<0.5) ? 0 : 30;
+      else {
+        const ms = [0,15,30,45];
+        m = ms[Math.floor(Math.random()*ms.length)];
+      }
+      return {h, m};
+    }
+
+    let cqMode = state.cqMode;
+    let cqAnswer = {h:12, m:0};
+    let cqLocked = false;
+    let cqStreak = 0;
+
+    function applyCQModeUI(){
+      document.getElementById('cqModeHour').classList.toggle('on', cqMode==='hour');
+      document.getElementById('cqModeHalf').classList.toggle('on', cqMode==='half');
+      document.getElementById('cqModeQuarter').classList.toggle('on', cqMode==='quarter');
+    }
+    applyCQModeUI();
+
+    function setCQMode(mode){
+      cqMode = mode;
+      state.cqMode = mode;
+      saveState();
+      applyCQModeUI();
+      if(document.getElementById('clockquiz').classList.contains('active')){
+        nextClockQuiz();
+      }
+    }
+
+    function startClockQuiz(){
+      cqStreak = 0;
+      document.getElementById('cqScore').textContent = '';
+      applyCQModeUI();
+      nextClockQuiz();
+    }
+
+    function nextClockQuiz(){
+      cqLocked = false;
+      cqAnswer = randomTimeByMode(cqMode);
+
+      // 針セット
+      const hourDeg = (cqAnswer.h % 12) * 30 + cqAnswer.m * 0.5;
+      const minDeg = cqAnswer.m * 6;
+      setHandsRotation(document.getElementById('cqHour'), hourDeg);
+      setHandsRotation(document.getElementById('cqMin'), minDeg);
+
+      document.getElementById('cqResult').textContent = '';
+      document.getElementById('cqTitle').textContent = 'このとけい、なんじ？';
+
+      // options
+      const options = new Map();
+      const key = t => `${t.h}-${t.m}`;
+      options.set(key(cqAnswer), cqAnswer);
+      while(options.size < 4){
+        const t = randomTimeByMode(cqMode);
+        options.set(key(t), t);
+      }
+      const shuffled = Array.from(options.values()).sort(()=>Math.random()-0.5);
+
+      const optsEl = document.getElementById('cqOpts');
+      optsEl.innerHTML = '';
+      shuffled.forEach(t=>{
+        const b = document.createElement('button');
+        b.className = 'opt';
+        b.textContent = formatTimeJP(t.h, t.m);
+        b.onclick = ()=>checkClockQuiz(t, b);
+        optsEl.appendChild(b);
+      });
+
+      otokaTalk('このとけい、なんじかな？', 'このとけい、なんじかな？');
+    }
+
+    function checkClockQuiz(t, btn){
+      if(cqLocked) return;
+
+      const ok = (t.h===cqAnswer.h && t.m===cqAnswer.m);
+      if(ok){
+        cqLocked = true;
+        cqStreak++;
+        btn.classList.add('correct');
+        document.getElementById('cqResult').textContent = '⭐ せいかい！ ⭐';
+        document.getElementById('cqScore').textContent = '⭐'.repeat(Math.min(cqStreak, 20));
+
+        otokaTalk(`${rand(PRAISE)} せいかい！`, `${rand(PRAISE)} せいかい！`);
+        popStarsAt(btn.getBoundingClientRect());
+
+        setTimeout(nextClockQuiz, 1600);
+      }else{
+        btn.classList.add('wrong');
+        document.getElementById('cqResult').textContent = 'おしい！もういっかい！';
+        otokaTalk(`おしい！ ${rand(TRY_AGAIN)}`, `おしい！ ${rand(TRY_AGAIN)}`);
+        setTimeout(()=>btn.classList.remove('wrong'), 520);
+      }
+    }
+
+    /***********************
+     * 針をうごかす（ドラッグ遊び）
+     ***********************/
+    let handsMode = state.handsMode;   // 'task' or 'free'
+    let handsDiff = state.handsDiff;   // 'hour' | 'half' | 'quarter'
+    let handsTarget = null;            // {h,m} or null
+    let handsTime = {h: 12, m: 0};     // current set time
+
+    const handsPanel = document.getElementById('handsPanel');
+    const handsDigital = document.getElementById('handsDigital');
+    const handsCheckBtn = document.getElementById('handsCheckBtn');
+    const handsNewBtn = document.getElementById('handsNewBtn');
+
+    const handsHourEl = document.getElementById('handsHour');
+    const handsMinEl  = document.getElementById('handsMin');
+    const hourHandle  = document.getElementById('hourHandle');
+    const minHandle   = document.getElementById('minHandle');
+
+    function applyHandsUI(){
+      document.getElementById('handsModeTask').classList.toggle('on', handsMode==='task');
+      document.getElementById('handsModeFree').classList.toggle('on', handsMode==='free');
+
+      document.getElementById('handsDiffHour').classList.toggle('on', handsDiff==='hour');
+      document.getElementById('handsDiffHalf').classList.toggle('on', handsDiff==='half');
+      document.getElementById('handsDiffQuarter').classList.toggle('on', handsDiff==='quarter');
+
+      const inTask = (handsMode === 'task');
+      handsCheckBtn.style.display = inTask ? 'inline-block' : 'none';
+      handsNewBtn.style.display   = inTask ? 'inline-block' : 'none';
+
+      // ちょうどモードでは「ふん」のつまみを止める（0ふん固定で遊ぶ）
+      if(handsDiff === 'hour'){
+        minHandle.style.opacity = '0.35';
+        minHandle.style.pointerEvents = 'none';
+      }else{
+        minHandle.style.opacity = '1';
+        minHandle.style.pointerEvents = 'auto';
+      }
+    }
+
+    function setHandsMode(mode){
+      handsMode = mode;
+      state.handsMode = mode;
+      saveState();
+      applyHandsUI();
+      if(document.getElementById('hands').classList.contains('active')){
+        startHandsPlay();
+      }
+    }
+
+    function setHandsDiff(diff){
+      handsDiff = diff;
+      state.handsDiff = diff;
+      saveState();
+      applyHandsUI();
+      if(document.getElementById('hands').classList.contains('active')){
+        startHandsPlay();
+      }
+    }
+
+    function getMinuteStep(){
+      if(handsDiff === 'hour') return 60;
+      if(handsDiff === 'half') return 30;
+      return 15; // quarter
+    }
+
+    function setHandsTime(h, m){
+      handsTime = {h, m};
+
+      const hourDeg = (h % 12) * 30 + m * 0.5;
+      const minDeg  = m * 6;
+
+      setHandsRotation(handsHourEl, hourDeg);
+      setHandsRotation(handsMinEl,  minDeg);
+
+      // 数字ハイライト
+      document.querySelectorAll('#handsNums .clock-number').forEach(n=>{
+        n.classList.toggle('highlight', parseInt(n.dataset.num,10) === h);
+      });
+
+      // デジタル表示
+      const mm = String(m).padStart(2, '0');
+      handsDigital.textContent = `${h}じ ${mm}ふん`;
+    }
+
+    function handsSpeak(){
+      const h = handsTime.h;
+      const m = handsTime.m;
+      const msg = (m===0) ? `${h}じ ちょうど` : (m===30) ? `${h}じ はん` : `${h}じ ${m}ふん`;
+      otokaTalk(`${msg} だよ`, `${msg} だよ`);
+      popStarsAt(handsDigital.getBoundingClientRect());
+    }
+
+    function startHandsPlay(){
+      applyHandsUI();
+      setHandsTime(12, 0);
+
+      if(handsMode === 'task'){
+        handsNewTarget();
+      }else{
+        handsTarget = null;
+        handsPanel.textContent = 'じゆうモード：すきなように うごかしてね。よむボタンで じかんを よむよ。';
+        otokaTalk('じゆうに うごかして あそぼう！', 'じゆうに うごかして あそぼう！');
+      }
+    }
+
+    function handsNewTarget(){
+      handsTarget = randomTimeByMode(handsDiff);
+
+      const t = formatTimeJP(handsTarget.h, handsTarget.m);
+      handsPanel.textContent = `おだい： 「${t}」 に してみて！  ○を つまんで うごかそう。`;
+
+      // スタートは少しバラしておく（ゲームっぽく）
+      const start = randomTimeByMode(handsDiff);
+      setHandsTime(start.h, start.m);
+
+      otokaTalk(`${t} に してみて！`, `${t} に してみて！`);
+    }
+
+    function handsCheck(){
+      if(!handsTarget) return;
+      const ok = (handsTime.h === handsTarget.h && handsTime.m === handsTarget.m);
+
+      if(ok){
+        handsPanel.textContent = `やったー！ せいかい！ つぎのおだい いくよ！`;
+        otokaTalk(`${rand(PRAISE)} せいかい！`, `${rand(PRAISE)} せいかい！`);
+        popStarsAt(document.getElementById('handsClock').getBoundingClientRect());
+        setTimeout(handsNewTarget, 1400);
+      }else{
+        const nowTxt = `${handsTime.h}じ ${String(handsTime.m).padStart(2,'0')}ふん`;
+        handsPanel.textContent = `おしい！ いまは「${nowTxt}」だよ。おだいに あわせてみよう！`;
+        otokaTalk(`おしい！ ${rand(TRY_AGAIN)}`, `おしい！ ${rand(TRY_AGAIN)}`);
+      }
+    }
+
+    // 角度計算：上が0度の時計向き
+    function angleFromPoint(clockEl, clientX, clientY){
+      const rect = clockEl.getBoundingClientRect();
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top  + rect.height/2;
+      const rad = Math.atan2(clientY - cy, clientX - cx);
+      let deg = rad * 180 / Math.PI + 90;
+      deg = (deg + 360) % 360;
+      return deg;
+    }
+
+    function snapMinute(min, step){
+      // step(30/15)に丸める
+      let v = Math.round(min / step) * step;
+      v = (v + 60) % 60;
+      return v;
+    }
+
+    function snapHourByDeg(deg){
+      // 0〜359を、最寄りの「時」に丸める
+      const idx = Math.floor((deg + 15) / 30) % 12;
+      return (idx === 0) ? 12 : idx;
+    }
+
+    let dragging = null; // 'hour' or 'min' or null
+    const handsClockEl = document.getElementById('handsClock');
+
+    function onDragMove(e){
+      if(!dragging) return;
+
+      const deg = angleFromPoint(handsClockEl, e.clientX, e.clientY);
+
+      if(dragging === 'min'){
+        const rawMin = deg / 6; // 0〜60
+        const step = getMinuteStep();
+        const m = snapMinute(rawMin, step);
+        setHandsTime(handsTime.h, m);
+      }else if(dragging === 'hour'){
+        const h = snapHourByDeg(deg);
+        setHandsTime(h, handsTime.m);
+      }
+    }
+
+    function onDragEnd(){
+      dragging = null;
+    }
+
+    hourHandle.addEventListener('pointerdown', (e)=>{
+      dragging = 'hour';
+      hourHandle.setPointerCapture(e.pointerId);
+      onDragMove(e);
+    });
+    hourHandle.addEventListener('pointermove', (e)=>{
+      if(dragging==='hour') onDragMove(e);
+    });
+    hourHandle.addEventListener('pointerup', onDragEnd);
+    hourHandle.addEventListener('pointercancel', onDragEnd);
+
+    minHandle.addEventListener('pointerdown', (e)=>{
+      dragging = 'min';
+      minHandle.setPointerCapture(e.pointerId);
+      onDragMove(e);
+    });
+    minHandle.addEventListener('pointermove', (e)=>{
+      if(dragging==='min') onDragMove(e);
+    });
+    minHandle.addEventListener('pointerup', onDragEnd);
+    minHandle.addEventListener('pointercancel', onDragEnd);
+
+    /***********************
+     * 初期化
+     ***********************/
+    function init(){
+      // まず数字を作る
+      requestAnimationFrame(()=>{
+        layoutAllNumbers();
+        setHandsTime(12, 0);
+      });
+
+      // 初回メッセージ
+      otokaTalk('どれで あそぶ？');
+    }
+
+    // 初期状態UI
+    function applyHandsSaved(){
+      // hands
+      handsMode = state.handsMode;
+      handsDiff = state.handsDiff;
+      applyHandsUI();
+      // clock quiz
+      cqMode = state.cqMode;
+      applyCQModeUI();
+    }
+    applyHandsSaved();
+
+    init();
+  </script>
+</body>
+</html>
 
