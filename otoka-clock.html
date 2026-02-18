@@ -14,7 +14,7 @@
     }
 
     body {
-      font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
       min-height: 100vh;
       min-height: 100dvh;
       overflow: hidden;
@@ -28,36 +28,85 @@
       min-height: 100vh;
       min-height: 100dvh;
       padding: 16px;
+      opacity: 0;
+      transition: opacity 0.4s;
     }
-    .screen.active { display: flex; }
+    .screen.active {
+      display: flex;
+      animation: fadeSlideIn 0.5s forwards;
+    }
 
-    /* ホーム */
+    @keyframes fadeSlideIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== ホーム ===== */
     #home {
       background: linear-gradient(135deg, #ffecd2, #fcb69f);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .floating-emoji {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.3;
+      animation: floatAround 8s infinite ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes floatAround {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-30px) rotate(10deg); }
+      50% { transform: translateY(-10px) rotate(-5deg); }
+      75% { transform: translateY(-40px) rotate(8deg); }
+    }
+
+    .home-mascot {
+      font-size: 4rem;
+      animation: mascotBounce 2s infinite;
+      cursor: pointer;
+      transition: transform 0.2s;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+    }
+    .home-mascot:active { transform: scale(1.3) rotate(15deg); }
+
+    @keyframes mascotBounce {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-15px) rotate(-5deg); }
+      50% { transform: translateY(0) rotate(0deg); }
+      75% { transform: translateY(-8px) rotate(5deg); }
     }
 
     .home-title {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       color: #e44d7b;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .home-name {
-      font-size: 2.5rem;
+      font-size: 2.2rem;
       color: #ff6b9d;
-      margin-bottom: 24px;
-      animation: bounce 1.5s infinite;
+      margin-bottom: 8px;
+      text-shadow: 2px 2px 4px rgba(255,107,157,0.3);
     }
 
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+    .stamp-counter {
+      background: rgba(255,255,255,0.8);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.95rem;
+      color: #e44d7b;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
     }
 
     .menu {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      gap: 12px;
       max-width: 340px;
       width: 100%;
     }
@@ -66,18 +115,36 @@
       background: #fff;
       border: none;
       border-radius: 22px;
-      padding: 20px 10px;
+      padding: 16px 8px;
       cursor: pointer;
       box-shadow: 0 5px 18px rgba(0,0,0,0.1);
-      transition: transform 0.15s;
+      transition: transform 0.2s, box-shadow 0.2s;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
+      position: relative;
+      overflow: hidden;
     }
-    .menu-btn:active { transform: scale(0.92); }
-    .menu-btn .icon { font-size: 2.8rem; }
-    .menu-btn .label { color: #555; font-weight: 600; font-size: 0.95rem; }
+    .menu-btn:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .menu-btn .icon { font-size: 2.6rem; transition: transform 0.3s; }
+    .menu-btn:hover .icon { transform: scale(1.1) rotate(5deg); }
+    .menu-btn .label { color: #555; font-weight: 600; font-size: 0.85rem; line-height: 1.3; }
+    .menu-btn .badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #ff6b9d;
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
 
     /* 戻るボタン */
     .back-btn {
@@ -85,23 +152,25 @@
       top: 14px;
       left: 14px;
       z-index: 100;
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.92);
       border: none;
       border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      font-size: 1.4rem;
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
       cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
       display: none;
+      transition: transform 0.2s;
     }
-    .back-btn.show { display: block; }
+    .back-btn.show { display: flex; align-items: center; justify-content: center; }
+    .back-btn:active { transform: scale(0.9); }
 
-    /* 時計共通 */
+    /* ===== 時計共通 ===== */
     .clock-container {
       position: relative;
-      width: 300px;
-      height: 300px;
+      width: 280px;
+      height: 280px;
       margin: 0 auto;
     }
 
@@ -117,17 +186,17 @@
 
     .clock-number {
       position: absolute;
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: 700;
       color: #444;
       cursor: pointer;
-      transition: transform 0.2s, background 0.2s, color 0.2s;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .clock-number:active { transform: scale(1.2); }
     .clock-number.highlight {
@@ -139,25 +208,30 @@
     .clock-number.correct {
       background: #2ed573;
       color: #fff;
-      transform: scale(1.3);
-      animation: pop 0.4s;
+      transform: scale(1.4);
+      animation: popBig 0.5s;
     }
     .clock-number.wrong {
       background: #ff6b6b;
       color: #fff;
       animation: shake 0.4s;
     }
+    .clock-number.color-hint {
+      border: 3px solid currentColor;
+    }
 
-    @keyframes pop {
+    @keyframes popBig {
       0% { transform: scale(1.3); }
-      50% { transform: scale(1.6); }
-      100% { transform: scale(1.3); }
+      40% { transform: scale(1.8); }
+      100% { transform: scale(1.4); }
     }
 
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-6px); }
-      75% { transform: translateX(6px); }
+      20% { transform: translateX(-8px) rotate(-5deg); }
+      40% { transform: translateX(8px) rotate(5deg); }
+      60% { transform: translateX(-6px) rotate(-3deg); }
+      80% { transform: translateX(6px) rotate(3deg); }
     }
 
     .clock-center {
@@ -178,19 +252,20 @@
       left: 50%;
       transform-origin: bottom center;
       border-radius: 4px;
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .hand-hour {
-      width: 6px;
-      height: 70px;
+      width: 7px;
+      height: 65px;
       background: #e44d7b;
-      margin-left: -3px;
+      margin-left: -3.5px;
       z-index: 5;
     }
 
     .hand-minute {
       width: 4px;
-      height: 100px;
+      height: 95px;
       background: #7c5cbf;
       margin-left: -2px;
       z-index: 6;
@@ -202,28 +277,43 @@
     }
 
     .learn-title {
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       color: #4caf50;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .learn-display {
-      margin-top: 20px;
+      margin-top: 16px;
       text-align: center;
-      min-height: 80px;
+      min-height: 90px;
     }
 
     .learn-big-number {
-      font-size: 4rem;
-      font-weight: 700;
+      font-size: 4.5rem;
+      font-weight: 800;
       color: #ff6b9d;
-      animation: pop 0.3s;
+    }
+
+    .learn-big-number.animate {
+      animation: numberPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes numberPop {
+      0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+      60% { transform: scale(1.2) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
 
     .learn-label {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       color: #888;
+      margin-top: 2px;
+    }
+
+    .learn-finger-emoji {
+      font-size: 2.5rem;
       margin-top: 4px;
+      min-height: 3rem;
     }
 
     /* ===== すうじクイズ ===== */
@@ -232,26 +322,33 @@
     }
 
     .quiz-question {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       color: #1976d2;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       font-weight: 700;
       min-height: 2em;
     }
 
     .quiz-question .target-num {
-      font-size: 2.2rem;
+      font-size: 2.4rem;
       color: #e44d7b;
+      display: inline-block;
+      animation: targetPulse 1s infinite;
+    }
+
+    @keyframes targetPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
     }
 
     .quiz-result {
-      margin-top: 16px;
-      font-size: 2rem;
-      min-height: 2.5rem;
+      margin-top: 12px;
+      font-size: 1.8rem;
+      min-height: 2.2rem;
     }
 
     .quiz-score {
-      margin-top: 8px;
+      margin-top: 6px;
       font-size: 1.1rem;
       color: #1976d2;
     }
@@ -262,22 +359,28 @@
     }
 
     .time-title {
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       color: #e65100;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .time-display {
-      margin-top: 20px;
-      font-size: 2.5rem;
+      margin-top: 16px;
+      font-size: 2.8rem;
       font-weight: 700;
       color: #e65100;
     }
 
     .time-label {
       margin-top: 4px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: #999;
+    }
+
+    .time-greeting {
+      margin-top: 8px;
+      font-size: 1.3rem;
+      color: #bf360c;
     }
 
     /* ===== とけいクイズ ===== */
@@ -286,17 +389,17 @@
     }
 
     .clockquiz-question {
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       color: #7b1fa2;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       font-weight: 700;
     }
 
     .clockquiz-options {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
+      gap: 10px;
+      margin-top: 12px;
       max-width: 300px;
       width: 100%;
     }
@@ -305,35 +408,290 @@
       background: #fff;
       border: 3px solid #e1bee7;
       border-radius: 18px;
-      padding: 16px;
+      padding: 14px;
       font-size: 1.5rem;
       font-weight: 700;
       color: #7b1fa2;
       cursor: pointer;
-      transition: transform 0.15s, border-color 0.15s;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .clockquiz-opt:active { transform: scale(0.93); }
     .clockquiz-opt.correct {
       background: #c8e6c9;
       border-color: #4caf50;
       color: #2e7d32;
+      transform: scale(1.1);
     }
     .clockquiz-opt.wrong {
       background: #ffcdd2;
       border-color: #e53935;
       color: #c62828;
+      animation: shake 0.4s;
     }
 
     .clockquiz-result {
-      margin-top: 14px;
-      font-size: 2rem;
-      min-height: 2.5rem;
+      margin-top: 10px;
+      font-size: 1.8rem;
+      min-height: 2.2rem;
     }
 
     .clockquiz-score {
-      margin-top: 6px;
+      margin-top: 4px;
       font-size: 1.1rem;
       color: #7b1fa2;
+    }
+
+    /* ===== いろあてクイズ ===== */
+    #colorquiz {
+      background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+    }
+
+    .colorquiz-question {
+      font-size: 1.3rem;
+      color: #c2185b;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .color-target {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      animation: colorPulse 1.5s infinite;
+    }
+
+    @keyframes colorPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+      50% { transform: scale(1.05); box-shadow: 0 6px 24px rgba(0,0,0,0.2); }
+    }
+
+    .color-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      max-width: 280px;
+      width: 100%;
+    }
+
+    .color-opt {
+      background: #fff;
+      border: 3px solid #f8bbd0;
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .color-opt:active { transform: scale(0.93); }
+    .color-opt.correct {
+      background: #c8e6c9;
+      border-color: #4caf50;
+      transform: scale(1.1);
+    }
+    .color-opt.wrong {
+      background: #ffcdd2;
+      border-color: #e53935;
+      animation: shake 0.4s;
+    }
+
+    .colorquiz-result {
+      margin-top: 10px;
+      font-size: 1.8rem;
+      min-height: 2.2rem;
+    }
+
+    .colorquiz-score {
+      font-size: 1.1rem;
+      color: #c2185b;
+    }
+
+    /* ===== じゅんばんならべ ===== */
+    #order {
+      background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+    }
+
+    .order-title {
+      font-size: 1.2rem;
+      color: #00838f;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .order-slots {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 14px;
+      min-height: 56px;
+    }
+
+    .order-slot {
+      width: 48px;
+      height: 48px;
+      border: 3px dashed #b2ebf2;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #00838f;
+      background: rgba(255,255,255,0.6);
+      transition: all 0.3s;
+    }
+    .order-slot.filled {
+      background: #fff;
+      border: 3px solid #00bcd4;
+      animation: slotFill 0.3s;
+    }
+    .order-slot.wrong-slot {
+      border-color: #e53935;
+      animation: shake 0.4s;
+    }
+
+    @keyframes slotFill {
+      0% { transform: scale(0.5); }
+      60% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .order-choices {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 340px;
+    }
+
+    .order-choice {
+      width: 52px;
+      height: 52px;
+      background: #fff;
+      border: 3px solid #80deea;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #00838f;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .order-choice:active { transform: scale(0.9); }
+    .order-choice.used {
+      opacity: 0.3;
+      pointer-events: none;
+      transform: scale(0.8);
+    }
+
+    .order-result {
+      margin-top: 10px;
+      font-size: 1.8rem;
+      min-height: 2.2rem;
+    }
+
+    .order-score {
+      font-size: 1.1rem;
+      color: #00838f;
+    }
+
+    /* ===== スタンプカード ===== */
+    #stamps {
+      background: linear-gradient(135deg, #fff8e1, #ffecb3);
+    }
+
+    .stamps-title {
+      font-size: 1.3rem;
+      color: #f57f17;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .stamp-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 320px;
+      width: 100%;
+    }
+
+    .stamp-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .stamp-cell {
+      aspect-ratio: 1;
+      border-radius: 14px;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      border: 2px dashed #e0e0e0;
+      transition: all 0.3s;
+    }
+    .stamp-cell.earned {
+      background: #fff9c4;
+      border: 2px solid #ffd54f;
+      animation: stampAppear 0.5s;
+    }
+
+    @keyframes stampAppear {
+      0% { transform: scale(0) rotate(-180deg); }
+      60% { transform: scale(1.3) rotate(10deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .stamp-progress {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 1rem;
+      color: #f57f17;
+    }
+
+    .stamp-progress-bar {
+      height: 10px;
+      background: #f5f5f5;
+      border-radius: 5px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .stamp-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd54f, #ff9800);
+      border-radius: 5px;
+      transition: width 0.5s;
+    }
+
+    .stamp-reward {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 1.1rem;
+      color: #e65100;
+      min-height: 1.4rem;
+    }
+
+    /* ===== 紙吹雪 ===== */
+    .confetti {
+      position: fixed;
+      pointer-events: none;
+      z-index: 500;
+      font-size: 1.2rem;
+      animation: confettiFall 1.5s forwards;
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg) scale(0.3); opacity: 0; }
     }
 
     /* 星エフェクト */
@@ -341,25 +699,66 @@
       position: fixed;
       pointer-events: none;
       z-index: 300;
-      font-size: 1.5rem;
-      animation: starPop 0.8s forwards;
+      font-size: 1.8rem;
+      animation: starPop 0.9s forwards;
     }
 
     @keyframes starPop {
       0% { transform: scale(0) rotate(0deg); opacity: 1; }
-      50% { transform: scale(1.5) rotate(180deg); opacity: 1; }
-      100% { transform: scale(0.5) rotate(360deg) translateY(-60px); opacity: 0; }
+      40% { transform: scale(1.8) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0.3) rotate(360deg) translateY(-80px); opacity: 0; }
+    }
+
+    /* リップル */
+    .ripple {
+      position: fixed;
+      pointer-events: none;
+      z-index: 200;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 3px solid #ff6b9d;
+      animation: rippleOut 0.6s forwards;
+    }
+
+    @keyframes rippleOut {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+    }
+
+    /* 音ボタン */
+    .sound-toggle {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
     }
   </style>
 </head>
 <body>
 
   <button class="back-btn" id="backBtn" onclick="goHome()">🏠</button>
+  <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
 
   <!-- ホーム -->
   <div class="screen active" id="home">
+    <div class="floating-emoji" style="top:10%;left:10%;animation-delay:0s">🌟</div>
+    <div class="floating-emoji" style="top:20%;right:15%;animation-delay:2s">🎵</div>
+    <div class="floating-emoji" style="bottom:25%;left:8%;animation-delay:4s">🦋</div>
+    <div class="floating-emoji" style="bottom:15%;right:12%;animation-delay:6s">🌈</div>
+
+    <div class="home-mascot" onclick="playSound('pop');this.style.animation='none';this.offsetHeight;this.style.animation='mascotBounce 2s infinite';">🐱</div>
     <div class="home-title">ようこそ！</div>
-    <div class="home-name">🕐 おとかちゃん 🕐</div>
+    <div class="home-name">おとかちゃんの とけい</div>
+    <div class="stamp-counter" id="stampCounter" onclick="goScreen('stamps')">🏆 スタンプ: 0こ</div>
     <div class="menu">
       <button class="menu-btn" onclick="goScreen('learn')">
         <span class="icon">🔢</span>
@@ -377,6 +776,16 @@
         <span class="icon">🎯</span>
         <span class="label">とけい<br>クイズ</span>
       </button>
+      <button class="menu-btn" onclick="goScreen('colorquiz')">
+        <span class="icon">🎨</span>
+        <span class="label">いろあて<br>クイズ</span>
+        <span class="badge">New</span>
+      </button>
+      <button class="menu-btn" onclick="goScreen('order')">
+        <span class="icon">🔤</span>
+        <span class="label">じゅんばん<br>ならべ</span>
+        <span class="badge">New</span>
+      </button>
     </div>
   </div>
 
@@ -389,6 +798,7 @@
     <div class="learn-display">
       <div class="learn-big-number" id="learnNumber"></div>
       <div class="learn-label" id="learnLabel"></div>
+      <div class="learn-finger-emoji" id="learnFingers"></div>
     </div>
   </div>
 
@@ -413,6 +823,7 @@
       </div>
     </div>
     <div class="time-display" id="timeDisplay"></div>
+    <div class="time-greeting" id="timeGreeting"></div>
     <div class="time-label">じかんは どんどん すすむよ！</div>
   </div>
 
@@ -431,8 +842,310 @@
     <div class="clockquiz-score" id="clockquizScore"></div>
   </div>
 
+  <!-- いろあてクイズ -->
+  <div class="screen" id="colorquiz">
+    <div class="colorquiz-question" id="colorquizQ">このいろ、なーんだ？</div>
+    <div class="color-target" id="colorTarget"></div>
+    <div class="color-options" id="colorOpts"></div>
+    <div class="colorquiz-result" id="colorquizResult"></div>
+    <div class="colorquiz-score" id="colorquizScore"></div>
+  </div>
+
+  <!-- じゅんばんならべ -->
+  <div class="screen" id="order">
+    <div class="order-title" id="orderTitle">ちいさいじゅんに ならべてね！</div>
+    <div class="order-slots" id="orderSlots"></div>
+    <div class="order-choices" id="orderChoices"></div>
+    <div class="order-result" id="orderResult"></div>
+    <div class="order-score" id="orderScore"></div>
+  </div>
+
+  <!-- スタンプカード -->
+  <div class="screen" id="stamps">
+    <div class="stamps-title">🏆 スタンプカード 🏆</div>
+    <div class="stamp-card">
+      <div class="stamp-grid" id="stampGrid"></div>
+      <div class="stamp-progress">
+        <span id="stampProgressText">0 / 20</span>
+        <div class="stamp-progress-bar">
+          <div class="stamp-progress-fill" id="stampProgressFill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stamp-reward" id="stampReward"></div>
+  </div>
+
   <script>
+    /* ===== サウンドシステム (Web Audio API) ===== */
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+
+        switch (type) {
+          case 'tap':
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+            break;
+
+          case 'correct':
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523, now);
+            osc.frequency.setValueAtTime(659, now + 0.1);
+            osc.frequency.setValueAtTime(784, now + 0.2);
+            osc.frequency.setValueAtTime(1047, now + 0.3);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+            break;
+
+          case 'wrong':
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+            break;
+
+          case 'pop':
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(400, now + 0.08);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+            osc.start(now);
+            osc.stop(now + 0.12);
+            break;
+
+          case 'stamp':
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(554, now + 0.08);
+            osc.frequency.setValueAtTime(659, now + 0.16);
+            osc.frequency.setValueAtTime(880, now + 0.24);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.setValueAtTime(0.2, now + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+            osc.start(now);
+            osc.stop(now + 0.6);
+            break;
+
+          case 'complete':
+            // 完成ファンファーレ
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523, now);
+            osc.frequency.setValueAtTime(659, now + 0.15);
+            osc.frequency.setValueAtTime(784, now + 0.3);
+            osc.frequency.setValueAtTime(1047, now + 0.45);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.setValueAtTime(0.25, now + 0.5);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+            osc.start(now);
+            osc.stop(now + 0.8);
+            break;
+
+          case 'number':
+            // 数字タップ時のかわいい音
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(600 + Math.random() * 400, now);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+            break;
+        }
+      } catch (e) {}
+    }
+
+    // 数字に対応した音階
+    function playNumberTone(num) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+
+        // ドレミファソラシドレミファシ
+        const freqs = [262, 294, 330, 349, 392, 440, 494, 523, 587, 659, 698, 784];
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freqs[num - 1], now);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      } catch (e) {}
+    }
+
+    /* ===== エフェクト ===== */
+    function spawnRipple(x, y) {
+      const el = document.createElement('div');
+      el.className = 'ripple';
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 600);
+    }
+
+    function spawnStars(el) {
+      const rect = el.getBoundingClientRect();
+      spawnStarsAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+
+    function spawnStarsAt(cx, cy) {
+      const stars = ['⭐', '🌟', '✨', '💫', '🎉'];
+      for (let i = 0; i < 8; i++) {
+        const star = document.createElement('div');
+        star.className = 'star-burst';
+        star.textContent = stars[Math.floor(Math.random() * stars.length)];
+        star.style.left = (cx + (Math.random() - 0.5) * 140) + 'px';
+        star.style.top = (cy + (Math.random() - 0.5) * 140) + 'px';
+        document.body.appendChild(star);
+        setTimeout(() => star.remove(), 900);
+      }
+    }
+
+    function spawnConfetti() {
+      const emojis = ['🎊', '🎉', '⭐', '🌈', '🎵', '💖', '🦋', '🌸'];
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+          const el = document.createElement('div');
+          el.className = 'confetti';
+          el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          el.style.left = (Math.random() * 100) + 'vw';
+          el.style.top = '-20px';
+          el.style.animationDuration = (1 + Math.random() * 1.5) + 's';
+          document.body.appendChild(el);
+          setTimeout(() => el.remove(), 2500);
+        }, i * 80);
+      }
+    }
+
+    // タップ時のリップル
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches[0]) spawnRipple(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener('mousedown', (e) => {
+      spawnRipple(e.clientX, e.clientY);
+    });
+
+    /* ===== スタンプシステム ===== */
+    const STAMP_EMOJIS = ['🌟', '🎵', '🦋', '🌈', '🐱', '🌸', '🎀', '🍓', '🐰', '🌻',
+                          '💎', '🎪', '🦄', '🍭', '🐣', '🎠', '🧸', '🎈', '🍰', '👑'];
+    let totalStamps = 0;
+    let earnedStamps = []; // true/false array
+
+    function loadStamps() {
+      try {
+        const saved = localStorage.getItem('otoka_stamps');
+        if (saved) {
+          const data = JSON.parse(saved);
+          totalStamps = data.total || 0;
+          earnedStamps = data.earned || [];
+        }
+      } catch (e) {}
+      while (earnedStamps.length < 20) earnedStamps.push(false);
+      updateStampDisplay();
+    }
+
+    function saveStamps() {
+      try {
+        localStorage.setItem('otoka_stamps', JSON.stringify({ total: totalStamps, earned: earnedStamps }));
+      } catch (e) {}
+    }
+
+    function addStamp() {
+      // 次の空きスロットにスタンプ
+      const idx = earnedStamps.indexOf(false);
+      if (idx !== -1) {
+        earnedStamps[idx] = true;
+        totalStamps++;
+        saveStamps();
+        updateStampDisplay();
+        playSound('stamp');
+
+        if (totalStamps % 20 === 0) {
+          // 20個ごとにリセット＆お祝い
+          setTimeout(() => {
+            spawnConfetti();
+            playSound('complete');
+          }, 500);
+          setTimeout(() => {
+            earnedStamps = new Array(20).fill(false);
+            saveStamps();
+            updateStampDisplay();
+          }, 3000);
+        }
+      }
+    }
+
+    function updateStampDisplay() {
+      document.getElementById('stampCounter').textContent = `🏆 スタンプ: ${totalStamps}こ`;
+
+      const grid = document.getElementById('stampGrid');
+      if (grid) {
+        grid.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'stamp-cell' + (earnedStamps[i] ? ' earned' : '');
+          cell.textContent = earnedStamps[i] ? STAMP_EMOJIS[i] : '';
+          grid.appendChild(cell);
+        }
+      }
+
+      const count = earnedStamps.filter(Boolean).length;
+      const text = document.getElementById('stampProgressText');
+      const fill = document.getElementById('stampProgressFill');
+      const reward = document.getElementById('stampReward');
+      if (text) text.textContent = `${count} / 20`;
+      if (fill) fill.style.width = (count / 20 * 100) + '%';
+      if (reward) {
+        if (count >= 20) {
+          reward.textContent = '🎉 すごい！ぜんぶあつめた！ 🎉';
+        } else {
+          reward.textContent = `あと ${20 - count}こで コンプリート！`;
+        }
+      }
+    }
+
     /* ===== 時計の数字を配置 ===== */
+    const numberNames = {
+      1: 'いち', 2: 'に', 3: 'さん', 4: 'よん',
+      5: 'ご', 6: 'ろく', 7: 'なな', 8: 'はち',
+      9: 'きゅう', 10: 'じゅう', 11: 'じゅういち', 12: 'じゅうに'
+    };
+
     function buildClockNumbers(clockEl, onClick) {
       for (let i = 1; i <= 12; i++) {
         const el = document.createElement('div');
@@ -440,11 +1153,10 @@
         el.textContent = i;
         el.dataset.num = i;
 
-        // 円周上に配置（12が上）
         const angle = (i * 30 - 90) * (Math.PI / 180);
-        const r = 115; // 半径
-        const cx = 150 - 22; // 中心 - 要素半径
-        const cy = 150 - 22;
+        const r = 108;
+        const cx = 140 - 21;
+        const cy = 140 - 21;
         el.style.left = (cx + r * Math.cos(angle)) + 'px';
         el.style.top = (cy + r * Math.sin(angle)) + 'px';
 
@@ -458,71 +1170,93 @@
 
     function goScreen(name) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(name).classList.add('active');
+      const screen = document.getElementById(name);
+      screen.classList.add('active');
       document.getElementById('backBtn').classList.toggle('show', name !== 'home');
 
       if (timeInterval) { clearInterval(timeInterval); timeInterval = null; }
 
+      playSound('pop');
+
+      if (name === 'learn') initLearn();
       if (name === 'quiz') startQuiz();
       if (name === 'time') startRealClock();
       if (name === 'clockquiz') startClockQuiz();
+      if (name === 'colorquiz') startColorQuiz();
+      if (name === 'order') startOrder();
+      if (name === 'stamps') updateStampDisplay();
+      if (name === 'home') updateStampDisplay();
     }
 
     function goHome() { goScreen('home'); }
 
     /* ===== すうじをおぼえよう ===== */
-    const numberNames = {
-      1: 'いち', 2: 'に', 3: 'さん', 4: 'よん',
-      5: 'ご', 6: 'ろく', 7: 'なな', 8: 'はち',
-      9: 'きゅう', 10: 'じゅう', 11: 'じゅういち', 12: 'じゅうに'
+    const fingerEmojis = {
+      1: '☝️', 2: '✌️', 3: '🤟', 4: '🖖', 5: '🖐️',
+      6: '🖐️☝️', 7: '🖐️✌️', 8: '🖐️🤟', 9: '🖐️🖖', 10: '🖐️🖐️',
+      11: '🖐️🖐️☝️', 12: '🖐️🖐️✌️'
     };
 
-    const learnClock = document.getElementById('learnClock');
-    buildClockNumbers(learnClock, (num, el) => {
-      // ハイライトをリセット
-      learnClock.querySelectorAll('.clock-number').forEach(n => n.classList.remove('highlight'));
-      el.classList.add('highlight');
+    let learnInited = false;
+    function initLearn() {
+      if (learnInited) return;
+      learnInited = true;
+      const learnClock = document.getElementById('learnClock');
+      buildClockNumbers(learnClock, (num, el) => {
+        learnClock.querySelectorAll('.clock-number').forEach(n => n.classList.remove('highlight'));
+        el.classList.add('highlight');
 
-      const bigNum = document.getElementById('learnNumber');
-      const label = document.getElementById('learnLabel');
-      bigNum.textContent = num;
-      bigNum.style.animation = 'none';
-      bigNum.offsetHeight; // reflow
-      bigNum.style.animation = 'pop 0.3s';
-      label.textContent = `「${numberNames[num]}」`;
-    });
+        playNumberTone(num);
+
+        const bigNum = document.getElementById('learnNumber');
+        bigNum.textContent = num;
+        bigNum.className = 'learn-big-number';
+        bigNum.offsetHeight;
+        bigNum.className = 'learn-big-number animate';
+
+        document.getElementById('learnLabel').textContent = `「${numberNames[num]}」`;
+        document.getElementById('learnFingers').textContent = fingerEmojis[num] || '';
+      });
+    }
 
     /* ===== すうじクイズ ===== */
     let quizAnswer = null;
     let quizStreak = 0;
     let quizLocked = false;
-
-    const quizClock = document.getElementById('quizClock');
-    buildClockNumbers(quizClock, (num, el) => {
-      if (quizLocked) return;
-      const resultEl = document.getElementById('quizResult');
-
-      if (num === quizAnswer) {
-        quizLocked = true;
-        quizStreak++;
-        el.classList.add('correct');
-        resultEl.textContent = '⭐ せいかい！ ⭐';
-        spawnStars(el);
-        document.getElementById('quizScore').textContent = '⭐'.repeat(Math.min(quizStreak, 20));
-        setTimeout(() => {
-          quizClock.querySelectorAll('.clock-number').forEach(n => {
-            n.classList.remove('correct', 'wrong');
-          });
-          nextQuizQuestion();
-        }, 1500);
-      } else {
-        el.classList.add('wrong');
-        resultEl.textContent = 'もういっかい！💪';
-        setTimeout(() => el.classList.remove('wrong'), 400);
-      }
-    });
+    let quizInited = false;
 
     function startQuiz() {
+      if (!quizInited) {
+        quizInited = true;
+        const quizClock = document.getElementById('quizClock');
+        buildClockNumbers(quizClock, (num, el) => {
+          if (quizLocked) return;
+
+          if (num === quizAnswer) {
+            quizLocked = true;
+            quizStreak++;
+            el.classList.add('correct');
+            playSound('correct');
+            document.getElementById('quizResult').textContent = '⭐ せいかい！ ⭐';
+            spawnStars(el);
+            document.getElementById('quizScore').textContent = '⭐'.repeat(Math.min(quizStreak, 20));
+
+            if (quizStreak % 3 === 0) addStamp();
+
+            setTimeout(() => {
+              quizClock.querySelectorAll('.clock-number').forEach(n => {
+                n.classList.remove('correct', 'wrong');
+              });
+              nextQuizQuestion();
+            }, 1500);
+          } else {
+            el.classList.add('wrong');
+            playSound('wrong');
+            document.getElementById('quizResult').textContent = 'もういっかい！💪';
+            setTimeout(() => el.classList.remove('wrong'), 400);
+          }
+        });
+      }
       quizStreak = 0;
       document.getElementById('quizScore').textContent = '';
       nextQuizQuestion();
@@ -534,14 +1268,21 @@
       document.getElementById('quizQuestion').innerHTML =
         `<span class="target-num">${quizAnswer}</span> はどこかな？`;
       document.getElementById('quizResult').textContent = '';
-      quizClock.querySelectorAll('.clock-number').forEach(n => {
+      document.getElementById('quizClock').querySelectorAll('.clock-number').forEach(n => {
         n.classList.remove('correct', 'wrong', 'highlight');
       });
     }
 
     /* ===== いまなんじ ===== */
-    const timeClock = document.getElementById('timeClock');
-    buildClockNumbers(timeClock, null);
+    let timeInited = false;
+    function startRealClock() {
+      if (!timeInited) {
+        timeInited = true;
+        buildClockNumbers(document.getElementById('timeClock'), null);
+      }
+      updateRealClock();
+      timeInterval = setInterval(updateRealClock, 1000);
+    }
 
     function updateRealClock() {
       const now = new Date();
@@ -558,27 +1299,33 @@
       const dispM = String(m).padStart(2, '0');
       document.getElementById('timeDisplay').textContent = `${dispH}じ ${dispM}ふん`;
 
-      // 現在の時間の数字をハイライト
+      // 時間帯の挨拶
+      const greeting = document.getElementById('timeGreeting');
+      if (dispH < 6) greeting.textContent = '🌙 まだよるだね おやすみ〜';
+      else if (dispH < 10) greeting.textContent = '🌅 おはよう！あさだよ！';
+      else if (dispH < 12) greeting.textContent = '☀️ おひるまえだね！';
+      else if (dispH < 14) greeting.textContent = '🍙 おひるごはんのじかん！';
+      else if (dispH < 17) greeting.textContent = '🌤️ ごごだよ！あそぼう！';
+      else if (dispH < 19) greeting.textContent = '🌇 ゆうがただね';
+      else greeting.textContent = '🌙 よるだね おやすみのじかん';
+
       const currentH = h === 0 ? 12 : h;
-      timeClock.querySelectorAll('.clock-number').forEach(n => {
+      document.getElementById('timeClock').querySelectorAll('.clock-number').forEach(n => {
         n.classList.toggle('highlight', parseInt(n.dataset.num) === currentH);
       });
-    }
-
-    function startRealClock() {
-      updateRealClock();
-      timeInterval = setInterval(updateRealClock, 1000);
     }
 
     /* ===== とけいクイズ ===== */
     let cqAnswer = null;
     let cqStreak = 0;
     let cqLocked = false;
-
-    const cqClock = document.getElementById('clockquizClock');
-    buildClockNumbers(cqClock, null);
+    let cqInited = false;
 
     function startClockQuiz() {
+      if (!cqInited) {
+        cqInited = true;
+        buildClockNumbers(document.getElementById('clockquizClock'), null);
+      }
       cqStreak = 0;
       document.getElementById('clockquizScore').textContent = '';
       nextClockQuiz();
@@ -586,20 +1333,16 @@
 
     function nextClockQuiz() {
       cqLocked = false;
-      // ちょうどの時間だけ（3歳向け）
       cqAnswer = Math.floor(Math.random() * 12) + 1;
 
-      // 時計の針をセット
       const hourDeg = cqAnswer * 30;
       document.getElementById('cqHourHand').style.transform = `rotate(${hourDeg}deg)`;
       document.getElementById('cqMinuteHand').style.transform = `rotate(0deg)`;
 
-      // ハイライトをリセット
-      cqClock.querySelectorAll('.clock-number').forEach(n => {
+      document.getElementById('clockquizClock').querySelectorAll('.clock-number').forEach(n => {
         n.classList.remove('highlight');
       });
 
-      // 選択肢を生成（正解 + 3つのダミー）
       const options = new Set([cqAnswer]);
       while (options.size < 4) {
         options.add(Math.floor(Math.random() * 12) + 1);
@@ -622,47 +1365,195 @@
 
     function checkClockQuiz(h, btn) {
       if (cqLocked) return;
-      const resultEl = document.getElementById('clockquizResult');
 
       if (h === cqAnswer) {
         cqLocked = true;
         cqStreak++;
         btn.classList.add('correct');
-        resultEl.textContent = '⭐ すごい！せいかい！ ⭐';
-        // 正解の数字をハイライト
-        cqClock.querySelectorAll('.clock-number').forEach(n => {
+        playSound('correct');
+        document.getElementById('clockquizResult').textContent = '⭐ すごい！せいかい！ ⭐';
+        document.getElementById('clockquizClock').querySelectorAll('.clock-number').forEach(n => {
           if (parseInt(n.dataset.num) === cqAnswer) n.classList.add('highlight');
         });
-        spawnStarsAt(btn.getBoundingClientRect());
+        spawnStarsAt(btn.getBoundingClientRect().left + btn.getBoundingClientRect().width / 2,
+                      btn.getBoundingClientRect().top + btn.getBoundingClientRect().height / 2);
         document.getElementById('clockquizScore').textContent = '⭐'.repeat(Math.min(cqStreak, 20));
+
+        if (cqStreak % 3 === 0) addStamp();
+
         setTimeout(nextClockQuiz, 2000);
       } else {
         btn.classList.add('wrong');
-        resultEl.textContent = 'おしい！もういっかい！';
+        playSound('wrong');
+        document.getElementById('clockquizResult').textContent = 'おしい！もういっかい！';
         setTimeout(() => btn.classList.remove('wrong'), 500);
       }
     }
 
-    /* ===== 星エフェクト ===== */
-    function spawnStars(el) {
-      const rect = el.getBoundingClientRect();
-      spawnStarsAt(rect);
+    /* ===== いろあてクイズ ===== */
+    const COLORS = [
+      { name: 'あか', color: '#e53935' },
+      { name: 'あお', color: '#1e88e5' },
+      { name: 'きいろ', color: '#fdd835' },
+      { name: 'みどり', color: '#43a047' },
+      { name: 'オレンジ', color: '#fb8c00' },
+      { name: 'むらさき', color: '#8e24aa' },
+      { name: 'ピンク', color: '#ec407a' },
+      { name: 'ちゃいろ', color: '#795548' },
+    ];
+
+    let colorAnswer = null;
+    let colorStreak = 0;
+    let colorLocked = false;
+
+    function startColorQuiz() {
+      colorStreak = 0;
+      document.getElementById('colorquizScore').textContent = '';
+      nextColorQuiz();
     }
 
-    function spawnStarsAt(rect) {
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const stars = ['⭐', '🌟', '✨', '💫'];
-      for (let i = 0; i < 6; i++) {
-        const star = document.createElement('div');
-        star.className = 'star-burst';
-        star.textContent = stars[Math.floor(Math.random() * stars.length)];
-        star.style.left = (cx + (Math.random() - 0.5) * 100) + 'px';
-        star.style.top = (cy + (Math.random() - 0.5) * 100) + 'px';
-        document.body.appendChild(star);
-        setTimeout(() => star.remove(), 800);
+    function nextColorQuiz() {
+      colorLocked = false;
+      const idx = Math.floor(Math.random() * COLORS.length);
+      colorAnswer = idx;
+
+      document.getElementById('colorTarget').style.background = COLORS[idx].color;
+
+      const options = new Set([idx]);
+      while (options.size < 4) {
+        options.add(Math.floor(Math.random() * COLORS.length));
+      }
+      const shuffled = [...options].sort(() => Math.random() - 0.5);
+
+      const optsEl = document.getElementById('colorOpts');
+      optsEl.innerHTML = '';
+      shuffled.forEach(i => {
+        const btn = document.createElement('button');
+        btn.className = 'color-opt';
+        btn.textContent = COLORS[i].name;
+        btn.style.color = COLORS[i].color;
+        btn.onclick = () => checkColor(i, btn);
+        optsEl.appendChild(btn);
+      });
+
+      document.getElementById('colorquizQ').textContent = 'このいろ、なーんだ？';
+      document.getElementById('colorquizResult').textContent = '';
+    }
+
+    function checkColor(i, btn) {
+      if (colorLocked) return;
+
+      if (i === colorAnswer) {
+        colorLocked = true;
+        colorStreak++;
+        btn.classList.add('correct');
+        playSound('correct');
+        document.getElementById('colorquizResult').textContent = '⭐ せいかい！ ⭐';
+        spawnStarsAt(btn.getBoundingClientRect().left + btn.getBoundingClientRect().width / 2,
+                      btn.getBoundingClientRect().top + btn.getBoundingClientRect().height / 2);
+        document.getElementById('colorquizScore').textContent = '⭐'.repeat(Math.min(colorStreak, 20));
+
+        if (colorStreak % 3 === 0) addStamp();
+
+        setTimeout(nextColorQuiz, 1800);
+      } else {
+        btn.classList.add('wrong');
+        playSound('wrong');
+        document.getElementById('colorquizResult').textContent = 'おしい！もういっかい！';
+        setTimeout(() => btn.classList.remove('wrong'), 500);
       }
     }
+
+    /* ===== じゅんばんならべ ===== */
+    let orderNums = [];
+    let orderCurrent = 0;
+    let orderStreak = 0;
+    let orderLocked = false;
+
+    function startOrder() {
+      orderStreak = 0;
+      document.getElementById('orderScore').textContent = '';
+      nextOrder();
+    }
+
+    function nextOrder() {
+      orderLocked = false;
+      orderCurrent = 0;
+
+      // 3〜5個の数字（3歳向けなので少なめ）
+      const count = 3 + Math.min(Math.floor(orderStreak / 2), 2);
+      const all = [];
+      for (let i = 1; i <= 12; i++) all.push(i);
+      // シャッフルして最初のcount個
+      all.sort(() => Math.random() - 0.5);
+      orderNums = all.slice(0, count).sort((a, b) => a - b);
+
+      // スロット
+      const slotsEl = document.getElementById('orderSlots');
+      slotsEl.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'order-slot';
+        slot.dataset.idx = i;
+        slotsEl.appendChild(slot);
+      }
+
+      // 選択肢（シャッフル）
+      const shuffled = [...orderNums].sort(() => Math.random() - 0.5);
+      const choicesEl = document.getElementById('orderChoices');
+      choicesEl.innerHTML = '';
+      shuffled.forEach(n => {
+        const btn = document.createElement('div');
+        btn.className = 'order-choice';
+        btn.textContent = n;
+        btn.dataset.num = n;
+        btn.onclick = () => checkOrder(n, btn);
+        choicesEl.appendChild(btn);
+      });
+
+      document.getElementById('orderTitle').textContent = 'ちいさいじゅんに ならべてね！';
+      document.getElementById('orderResult').textContent = '';
+    }
+
+    function checkOrder(num, btn) {
+      if (orderLocked) return;
+
+      if (num === orderNums[orderCurrent]) {
+        // 正解
+        btn.classList.add('used');
+        playSound('tap');
+
+        const slots = document.querySelectorAll('#orderSlots .order-slot');
+        slots[orderCurrent].textContent = num;
+        slots[orderCurrent].classList.add('filled');
+
+        orderCurrent++;
+
+        if (orderCurrent === orderNums.length) {
+          // 全部並べた！
+          orderLocked = true;
+          orderStreak++;
+          playSound('correct');
+          document.getElementById('orderResult').textContent = '⭐ かんぺき！ ⭐';
+          spawnConfetti();
+          document.getElementById('orderScore').textContent = '⭐'.repeat(Math.min(orderStreak, 20));
+
+          if (orderStreak % 2 === 0) addStamp();
+
+          setTimeout(nextOrder, 2500);
+        }
+      } else {
+        // 不正解
+        playSound('wrong');
+        const slots = document.querySelectorAll('#orderSlots .order-slot');
+        slots[orderCurrent].classList.add('wrong-slot');
+        setTimeout(() => slots[orderCurrent].classList.remove('wrong-slot'), 400);
+        document.getElementById('orderResult').textContent = 'もっとちいさいのは？🤔';
+      }
+    }
+
+    /* ===== 初期化 ===== */
+    loadStamps();
   </script>
 </body>
 </html>
